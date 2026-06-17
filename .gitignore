@@ -1,0 +1,17 @@
+# Upstream clone — external reference, not our code
+/vendor/mpp/
+
+# Node
+node_modules/
+dist/
+.env
+.env.local
+*.log
+
+# OS / editor
+.DS_Store
+.vscode/
+
+# Research scratch + generated Tap configs (per-builder artifacts)
+.firecrawl/
+*.tap.json

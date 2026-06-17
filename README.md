@@ -1,0 +1,119 @@
+# Aqueduct
+
+**Compile any dataset into a Tap: a metered, agent-payable data feed.** Point Aqueduct at a
+parquet / CSV / JSON file and it produces a *Tap* — an HTTP service where AI agents pay per row over
+[MPP](https://mpp.dev) (the Machine Payments Protocol) on Tempo, via off-chain session vouchers
+settled on-chain.
+
+```
+npx aqueduct-mpp onboard data.parquet --recipient 0xYourPayout   # → data.tap.json
+AQUEDUCT_PRIVATE_KEY=0x… npx aqueduct-mpp serve data.tap.json     # → live Tap on :8402
+```
+
+No LLM runs when an agent queries. Onboarding profiles the file and writes a frozen, versioned **Tap
+config**; the runtime that serves paid requests is pure, deterministic config execution. That's what
+keeps it cheap (sub-cent per row) and fast (cached reads < 100 ms).
+
+## Install
+
+```bash
+npm i -g aqueduct-mpp     # or use npx aqueduct-mpp …
+```
+
+Requires Node ≥ 20. The DuckDB query engine ships as a prebuilt native dependency.
+
+## Build a Tap (you, the data publisher)
+
+```bash
+# Deterministic — infers the schema and a safe query interface, no model required:
+npx aqueduct-mpp onboard ./cities.parquet \
+  --recipient 0xYourPayoutAddress \
+  --unit-price 0.0001 \
+  --out cities.tap.json
+
+# Optional: layer an LLM pass over it for smarter filters + richer correctness checks:
+npx aqueduct-mpp onboard ./cities.parquet --recipient 0x… --refine --llm claude
+```
+
+Onboarding runs an **eval gate** (the source has rows, a sample conforms to the inferred schema,
+pinned row-count tripwires hold). A config that fails the gate is never written.
+
+```bash
+# Serve it. The server re-runs the eval gate before going live.
+export AQUEDUCT_PRIVATE_KEY=0x…   # server wallet — receives settlement
+npx aqueduct-mpp serve cities.tap.json --port 8402
+```
+
+Endpoints:
+
+| Route | Cost | Purpose |
+|---|---|---|
+| `GET /schema` | free | discovery — columns, filters, price, token |
+| `GET /query?q=<base64url JSON>` | paid | the data (one MPP session voucher per query) |
+| `POST /query` | — | MPP session channel lifecycle (open / top-up / close) |
+
+The agent request rides in `q` as base64url-encoded JSON: `{ select?, filters?, sort?, limit?, offset? }`,
+constrained to exactly the fields/operators the config declares. Agents never send SQL.
+
+## Consume a Tap (the agent)
+
+```ts
+import { tempo } from "mppx/client";
+import { privateKeyToAccount } from "viem/accounts";
+
+const session = tempo.session.manager({ account, getClient, maxDeposit: "1" });
+const q = Buffer.from(JSON.stringify({ filters: [{ field: "country", op: "eq", value: "JP" }], limit: 50 }))
+  .toString("base64url");
+
+const res = await session.fetch(`${tap}/query?q=${q}`);  // 402 → session voucher → 200
+const { rows, count, amount } = await res.json();         // billed `count × unitPrice`
+await session.close();                                    // settle the cumulative voucher on-chain
+```
+
+First request gets a `402` challenge; the session manager opens a channel, signs a voucher, and
+retries to `200`. Pricing is `returnedRows × unitPrice` (zero-row queries are free). Settlement is
+peer-to-peer agent↔publisher on Tempo — **Aqueduct is non-custodial and never touches funds.**
+
+## Environment
+
+| Var | Used by | Meaning |
+|---|---|---|
+| `AQUEDUCT_PRIVATE_KEY` | `serve` | server wallet key (receives settlement) |
+| `AQUEDUCT_SECRET` | `serve` | MPP challenge-signing secret. Random per process if unset; set it to keep it stable across restarts / instances |
+| `AQUEDUCT_SPONSOR_KEY` | `serve` | optional — a **separate** funded wallet that sponsors agents' on-chain gas (incl. settlement). Must differ from the settlement wallet. Omit → agents self-pay gas |
+| `AQUEDUCT_RPC_URL` | `serve` | Tempo RPC (default: Moderato testnet) |
+
+## Programmatic API
+
+```ts
+import { deriveConfig, createTapServer, DuckDbEngine, validate } from "aqueduct-mpp";
+```
+
+Exposes the same pieces the CLI composes: `deriveConfig` / `onboard` (build a config), `validate`
+(the eval gate → a `ValidatedConfig`, the only servable type), `createTapServer` (the runtime),
+and the `DuckDbEngine` adapter.
+
+## How it's built
+
+- **`core/`** — pure logic, no I/O, no vendor SDKs: the config schema, the query planner (the security
+  perimeter — declared filters/columns → an abstract plan, never raw SQL), the eval engine, BigInt
+  pricing.
+- **`adapters/`** — the external seams: `source/duckdb` (reads parquet/CSV/JSON), `llm/cli`
+  (claude/codex for the optional refine pass).
+- **`runtime/`** — the hot path: a Hono server that executes a config behind an MPP session charge,
+  plus a TTL result cache.
+
+See `CLAUDE.md` for the full architecture and its invariants.
+
+## Status & limits
+
+Working end-to-end on the Tempo Moderato testnet: onboard → serve → agent makes **multiple** paid
+requests on one session channel (cumulative vouchers, cache hit on repeats) → `200` + rows + receipt →
+a single on-chain settle at close. Today's scope is **static structured files** (parquet / CSV / JSON).
+Known limits: a single in-process session store (multi-instance deploys need a shared store, on the
+roadmap) and a hosted (Akash) deployment (roadmap). Fully-sponsored agent gas needs a separate sponsor
+wallet (`AQUEDUCT_SPONSOR_KEY`); without one, agents self-pay gas.
+
+## Links
+
+Docs: https://mpp.dev · MPP repo: https://github.com/tempoxyz/mpp · Spec: https://paymentauth.org

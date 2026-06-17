@@ -1,0 +1,56 @@
+{
+  "name": "aqueduct-mpp",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Compile any dataset into a Tap: a metered, agent-payable, MPP-session data feed on Tempo.",
+  "license": "MIT",
+  "keywords": ["mpp", "tempo", "x402", "agent-payments", "duckdb", "data-api", "micropayments"],
+  "homepage": "https://github.com/your-org/aqueduct#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-org/aqueduct.git"
+  },
+  "bin": {
+    "aqueduct": "dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": ["dist", "README.md"],
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup",
+    "aqueduct": "tsx cli/index.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "prepublishOnly": "npm run build && npm run test"
+  },
+  "dependencies": {
+    "@duckdb/node-api": "1.5.3-r.3",
+    "@hono/node-server": "^1.19.14",
+    "hono": "^4.12.25",
+    "mppx": "^0.7.0",
+    "viem": "^2.52.2",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/node": "^22.19.21",
+    "tsup": "^8.5.1",
+    "tsx": "^4.22.4",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  }
+}
