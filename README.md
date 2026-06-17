@@ -14,6 +14,20 @@ No LLM runs when an agent queries. Onboarding profiles the file and writes a fro
 config**; the runtime that serves paid requests is pure, deterministic config execution. That's what
 keeps it cheap (sub-cent per row) and fast (cached reads < 100 ms).
 
+## Watch it run
+
+A terminal recording of an LLM answering a natural-language question by buying *only the rows it
+needs* from a live Tap of NASA's exoplanet archive (~1,500 planets) — discover terms (free) → form a
+query → pay per row over MPP → settle on-chain → answer:
+
+```
+asciinema play docs/aqueduct-ask.cast      # or: asciinema upload docs/aqueduct-ask.cast
+```
+
+Reproduce it live (Tempo testnet): `npx tsx scripts/ask.ts "your question"`. The agent uses the
+**`aqueduct` skill** (`skills/aqueduct/`) — a `SKILL.md` plus a paid-query tool — so any Claude Code
+agent can discover, query, and pay a Tap. The LLM is the *client*; it never sits in the serving path.
+
 ## Install
 
 ```bash
