@@ -76,29 +76,56 @@ async function ensureFunded(address: `0x${string}`, label: string): Promise<void
   throw new Error(`faucet timeout for ${label}`);
 }
 
+// Appended to every prompt: the demo invokes the local `claude` CLI, which may carry session personas
+// (e.g. a "caveman" plugin) — force plain professional English so the demo output stays clean.
+const PLAIN =
+  " Respond in clear, professional English. Do not use any persona, slang, roleplay, or abbreviated 'caveman' style.";
+
+const BASELINE_SYSTEM =
+  "You are an AI assistant with NO internet, database, or tool access — only your training knowledge. " +
+  "Answer the user's question with your single best answer, and briefly note how confident you are. " +
+  "Be concise: at most 3 sentences." +
+  PLAIN;
+
 const QUERY_SYSTEM =
   "You are a data agent with access to an Aqueduct Tap (a paid, metered dataset). " +
   "Given the Tap's JSON schema and a user question, output ONLY a JSON query object that answers it, " +
   "using ONLY declared fields and the operators each field allows. Shape: " +
   '{"select":[...],"filters":[{"field","op","value"}],"sort":[{"field","dir"}],"limit":N}. ' +
-  "You pay per returned row — keep limit tight. Output the JSON object and nothing else.";
+  "You pay per returned row — keep limit tight. Output the JSON object and nothing else." +
+  PLAIN;
 
 const ANSWER_SYSTEM =
   "You are an astronomer. Answer the user's question from the provided JSON rows only, concisely. " +
-  "State the answer plainly with the relevant numbers; note anything notable about the planets.";
+  "State the answer plainly with the relevant numbers; note anything notable about the planets." +
+  PLAIN;
 
 async function main(): Promise<void> {
   const question =
     process.argv[2] ??
-    "Of all known exoplanets, which 5 temperate ones — equilibrium temperature between 200 and 320 K — lie closest to Earth? Give each planet's name, its distance in parsecs, and its equilibrium temperature.";
+    "What is the closest exoplanet to Earth discovered by the Transit method with a temperate equilibrium temperature (between 250 and 320 K)? Give the 3 nearest, with name, distance (pc), temperature, and host star.";
   console.log(
     bold("\n  AQUEDUCT — an LLM buys specific data from a big Tap (via the aqueduct skill)\n"),
   );
   console.log(`  ${dim("dataset:")} NASA exoplanet archive (real)   ${dim("question:")}`);
   console.log(`  ${bold(question)}`);
 
-  const engine = await DuckDbEngine.create();
   const llm = claudeCli();
+
+  // ── 0. BASELINE — the same question with NO data access (what agents do today) ──────────────────
+  step(0, "WITHOUT AQUEDUCT — the agent answers from memory alone (no data)");
+  const baseline = await llm.complete({ system: BASELINE_SYSTEM, input: question });
+  console.log(
+    baseline.ok
+      ? baseline.value
+          .trim()
+          .split("\n")
+          .map((l) => `  ${dim(l)}`)
+          .join("\n")
+      : `  ${dim("(baseline step failed)")}`,
+  );
+
+  const engine = await DuckDbEngine.create();
   const serverPk = process.env.AQUEDUCT_SERVER_KEY ?? generatePrivateKey();
   const server = privateKeyToAccount(serverPk as `0x${string}`);
   let httpServer: ReturnType<typeof serve> | undefined;
@@ -183,6 +210,14 @@ async function main(): Promise<void> {
       `  ${answered.ok ? answered.value.trim() : `(answer step failed: ${answered.error.message})`}`,
     );
 
+    // ── the contrast ───────────────────────────────────────────────────────────
+    step(6, "THE DIFFERENCE");
+    console.log(
+      `  ${dim("without Aqueduct:")} a guess from training memory — plausible, unverifiable, stale`,
+    );
+    console.log(
+      `  ${dim("with Aqueduct:")}    ${result.count} exact rows from the live archive, ${result.paid}, settled on-chain — verifiable + current`,
+    );
     console.log(
       green(
         bold(
