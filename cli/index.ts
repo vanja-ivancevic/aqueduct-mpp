@@ -26,6 +26,7 @@ import { validate } from "../core/evals";
 import { type OnboardInput, onboard } from "../core/onboard";
 import { renderServiceEntry } from "../core/registry";
 import { createTapServer } from "../runtime/server";
+import { mountStreamRoute } from "../runtime/stream";
 
 async function main(argv: string[]): Promise<number> {
   const [cmd, ...rest] = argv;
@@ -179,13 +180,18 @@ async function cmdServe(args: string[]): Promise<number> {
   // including on-chain settle. Must differ from the settlement wallet (Tempo rejects sender==feePayer).
   const sponsorKey = process.env.AQUEDUCT_SPONSOR_KEY;
   const sponsorAccount = sponsorKey ? privateKeyToAccount(sponsorKey as `0x${string}`) : undefined;
-  const app = createTapServer(gate.config, engine, {
+  const serverOpts = {
     account,
     sponsorAccount,
     rpcUrl: process.env.AQUEDUCT_RPC_URL,
     realm: gate.config.name,
     secretKey,
-  });
+  };
+  const app = createTapServer(gate.config, engine, serverOpts);
+
+  // Experimental: pay-as-you-consume row streaming over MPP SSE. Additive route, opt-in.
+  const streaming = flags.get("stream") !== undefined;
+  if (streaming) mountStreamRoute(app, gate.config, engine, serverOpts);
 
   const port = Number(flags.get("port") ?? process.env.PORT ?? 8402);
   serve({ fetch: app.fetch, port });
@@ -195,6 +201,10 @@ async function cmdServe(args: string[]): Promise<number> {
     `  GET  /query?q=<base64url> (paid)   ${gate.config.pricing.unitPrice}/${gate.config.pricing.unit} over MPP sessions`,
   );
   console.error("  POST /query              (paid)   MPP session channel lifecycle");
+  if (streaming)
+    console.error(
+      `  GET  /query/stream       (paid)   per-row SSE, ${gate.config.pricing.unitPrice}/${gate.config.pricing.unit} pay-as-consumed (experimental)`,
+    );
   console.error(`  wallet ${account.address} receives settlement`);
   await new Promise<never>(() => {}); // run until killed; never resolve so main() doesn't exit
   return 0; // unreachable
@@ -336,6 +346,7 @@ onboard flags:
 
 serve flags:
   --port <n>          listen port (default: 8402)
+  --stream            also mount GET /query/stream — per-row pay-as-consumed SSE (experimental)
   env AQUEDUCT_PRIVATE_KEY   server wallet key (required)
   env AQUEDUCT_RPC_URL       Tempo RPC (default: moderato testnet)`);
 }

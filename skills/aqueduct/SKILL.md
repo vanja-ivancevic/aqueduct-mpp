@@ -78,6 +78,7 @@ run the flow below against it.
 
 ## Not in scope (yet)
 
-Streaming/SSE for bulk pulls is roadmap — today a query returns its (limit-bounded) rows as one JSON
-body, which is the right shape for the targeted reads this skill is for. Live APIs and SQL/scraped
+Streaming/SSE for bulk pulls is **experimental** (a Tap served with `--stream` exposes a per-row
+`GET /query/stream`; see `docs/streaming.md`) — for the targeted reads this skill is for, a query
+returns its (limit-bounded) rows as one JSON body, which is the right shape. Live APIs and SQL/scraped
 sources are roadmap; Taps today are static parquet/CSV/JSON.

@@ -13,6 +13,7 @@ reference behind it.
 | [query.md](./query.md) | The agent request shape and the constrained query interface (why agents never send SQL) |
 | [pricing.md](./pricing.md) | How a request is priced and billed over an MPP session |
 | [discovery.md](./discovery.md) | Finding & consuming Taps — `register`, the skill, the MCP server (no directory of our own) |
+| [streaming.md](./streaming.md) | Per-row pay-as-you-consume SSE streaming (**experimental**, opt-in via `--stream`) |
 | [../DEPLOY.md](../DEPLOY.md) | Ship a Tap as a container — local docker-compose ↔ Akash |
 | [../DEMO.md](../DEMO.md) | The live LLM-buys-data demo on NASA's exoplanet archive |
 

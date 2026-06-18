@@ -142,8 +142,10 @@ requests on one session channel (cumulative vouchers, cache hit on repeats) → 
 a single on-chain settle at close. Ships as a stateless container that runs the same locally and on
 Akash ([DEPLOY.md](./DEPLOY.md)). Today's scope is **static structured files** (parquet / CSV / JSON).
 Known limits: a single in-process session store (multi-instance deploys need a shared store, on the
-roadmap), and SSE streaming + volatile/live sources are roadmap. Fully-sponsored agent gas needs a
-separate sponsor wallet (`AQUEDUCT_SPONSOR_KEY`); without one, agents self-pay gas.
+roadmap), and volatile/live sources are roadmap. Per-row SSE streaming is **experimental** (opt-in
+`--stream`): delivery + metering work, session-close reconciliation has an open issue — see
+[docs/streaming.md](./docs/streaming.md). Fully-sponsored agent gas needs a separate sponsor wallet
+(`AQUEDUCT_SPONSOR_KEY`); without one, agents self-pay gas.
 
 ## Documentation
 
@@ -154,6 +156,7 @@ Reference docs live in [`docs/`](./docs/README.md):
 - [Query interface](./docs/query.md) — the agent request shape + why agents never send SQL
 - [Pricing & billing](./docs/pricing.md) — `rows × unitPrice` over an MPP session
 - [Discovery & consumption](./docs/discovery.md) — find/buy Taps via MPP's registry, the skill, the MCP server
+- [Streaming](./docs/streaming.md) — per-row pay-as-you-consume SSE (**experimental**, opt-in `--stream`)
 - [Deploy](./DEPLOY.md) — ship a Tap local ↔ Akash · [Demo](./DEMO.md) — the live LLM-buys-data run
 
 Design docs (the *why*) are in [`knowledge/`](./knowledge/00-index.md).
