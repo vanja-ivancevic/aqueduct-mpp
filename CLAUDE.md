@@ -125,6 +125,10 @@ provider SDK in core. Anything else: justify in the PR.
 3. Hot-path changes stay within budget (no LLM, no unneeded I/O).
 4. New Tap behavior has evals.
 5. A new reader understands the file without you explaining it.
+6. **Docs track the change.** Any change to behavior, CLI, config, API, or deploy updates the
+   relevant `docs/` page, `README.md`, and `DEPLOY.md`/`DEMO.md` in the *same* unit of work — never
+   a follow-up. Stale docs are a defect. (Design rationale lives in `knowledge/`; user-facing
+   reference lives in `docs/` + the root markdown.)
 
 ## Anti-patterns (reject on sight)
 
