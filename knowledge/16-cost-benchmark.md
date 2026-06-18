@@ -52,7 +52,38 @@ agent — it's removing the LLM from the *repeat* path:
 - **Inaccessibility / scale.** Datasets too big to naively load, gated, or live — where Arm A's first
   code attempt fails and iterates.
 
-**Conclusion:** Aqueduct is not "a cheaper analyst for one question." It is **deterministic, metered,
-$0-LLM data *serving*** — the win is at volume and in reliability, where you take the LLM out of the
-loop entirely. The next benchmark should measure the volume case (K repeated queries) and the
-discovery case (no URL given), which is where "Claude Code spends too many tokens" actually lives.
+**Conclusion (one-shot, public data):** Aqueduct is not "a cheaper analyst for one question." It is
+**deterministic, metered, $0-LLM data *serving*** — the win is at volume and in reliability, where you
+take the LLM out of the loop entirely.
+
+## Follow-up: discovery mode (no URL handed over)
+
+We re-ran Arm A but withheld the URL — Claude had to *find* the dataset itself ("NYC yellow taxi, Jan
+2024"):
+
+| question | known-URL | discovery (no URL) | correct |
+|---|--:|--:|:-:|
+| fare>1000 | $0.11 | **$0.15** (3 turns, 20s) | ✓ |
+| tip>100 | $0.11 | **$0.13** (3 turns, 11s) | ✓ |
+
+Discovery added only **~$0.03**. Claude Code *knows where famous public datasets live* (TLC, on
+CloudFront) and goes straight there. So discovery doesn't break it either — **for popular, public,
+accessible data, Claude Code is cheap, fast, and correct. The judge is right.**
+
+## So where does Aqueduct actually win? (the honest strategic answer)
+
+The "can Aqueduct answer what Claude can't" framing is the wrong axis. On **public** data it can't beat
+Claude Code, and shouldn't try. Aqueduct's real position is the **supply side**:
+
+1. **Private / proprietary data.** Claude Code can only fetch what's *already public*. A data owner's
+   internal feed, a paid dataset, a live gated API — Claude literally cannot reach it. Aqueduct is the
+   rails for an owner to **sell** that data to agents per-query. (Claude Code is the *buyer*; Aqueduct
+   is *seller* infrastructure.)
+2. **Volume / $0-LLM serving.** The LLM forms a query (or onboards) once; serving it the 2nd…Nth time
+   is $0 LLM + $0.0001/row, deterministic. Answer one query 1,000×: Claude-Code ≈ $110; Tap ≈ $0.10.
+3. **Determinism & no hallucination.** Same query → same rows. (The exoplanet demo's no-data baseline
+   showed Claude confabulating radii from memory; a Tap can't.)
+
+**Net:** position Aqueduct as **metered monetization infra for data *suppliers*** (the MPP/Tempo
+thesis — machine-to-machine micropayments for data), not as a cheaper analyst for public data. The
+benchmark is the evidence for *why* that's the right framing.
