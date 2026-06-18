@@ -44,7 +44,17 @@ export function claudeCli(opts: { bin?: string } = {}): LlmProvider {
       try {
         const res = await run(
           bin,
-          ["-p", "--output-format", "json", "--append-system-prompt", system],
+          // Clear hooks for this call so a programmatic prompt runs cleanly and never inherits the
+          // operator's interactive session state (e.g. a "caveman" persona hook). Auth is untouched.
+          [
+            "-p",
+            "--settings",
+            '{"hooks":{}}',
+            "--output-format",
+            "json",
+            "--append-system-prompt",
+            system,
+          ],
           input,
         );
         if (res.code !== 0)

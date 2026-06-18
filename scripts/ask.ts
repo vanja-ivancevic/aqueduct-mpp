@@ -96,14 +96,15 @@ const QUERY_SYSTEM =
   PLAIN;
 
 const ANSWER_SYSTEM =
-  "You are an astronomer. Answer the user's question from the provided JSON rows only, concisely. " +
-  "State the answer plainly with the relevant numbers; note anything notable about the planets." +
+  "You are an astronomer. From the provided JSON rows ONLY, present the answer as a compact markdown " +
+  "table (one row per planet, columns matching the data), then add 2-3 brief highlights of the most " +
+  "notable planets. Be concise." +
   PLAIN;
 
 async function main(): Promise<void> {
   const question =
     process.argv[2] ??
-    "What is the closest exoplanet to Earth discovered by the Transit method with a temperate equilibrium temperature (between 250 and 320 K)? Give the 3 nearest, with name, distance (pc), temperature, and host star.";
+    "List the 15 Earth-sized exoplanets (radius 0.8–1.5 Earth radii) closest to Earth. For each, give its name, distance (pc), radius, equilibrium temperature, discovery method, and discovery year.";
   console.log(
     bold("\n  AQUEDUCT — an LLM buys specific data from a big Tap (via the aqueduct skill)\n"),
   );
