@@ -69,6 +69,22 @@ Endpoints:
 The agent request rides in `q` as base64url-encoded JSON: `{ select?, filters?, sort?, limit?, offset? }`,
 constrained to exactly the fields/operators the config declares. Agents never send SQL.
 
+### Ship it (local ↔ Akash)
+
+A Tap runs as **one stateless container** — same image on your laptop and on [Akash](https://akash.network).
+It onboards the baked dataset deterministically at boot (no LLM), gates it, then serves. `aqueduct deploy`
+renders the orchestrator manifest:
+
+```bash
+docker build -t ghcr.io/you/aqueduct:1.0.0 .
+
+aqueduct deploy --target local --image ghcr.io/you/aqueduct:1.0.0   # → docker-compose.yml
+aqueduct deploy --target akash --image ghcr.io/you/aqueduct:1.0.0   # → akash.deploy.yaml (SSE-ready ingress)
+```
+
+Secrets are never baked — local interpolates them from your env, Akash takes them as manifest values you
+fill in. Full guide: **[DEPLOY.md](./DEPLOY.md)**.
+
 ## Consume a Tap (the agent)
 
 ```ts

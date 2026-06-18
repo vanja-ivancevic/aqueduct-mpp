@@ -13,6 +13,9 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { basename, extname, resolve } from "node:path";
 import { serve } from "@hono/node-server";
 import { privateKeyToAccount } from "viem/accounts";
+import { akashCompute } from "../adapters/compute/akash";
+import { localCompute } from "../adapters/compute/local";
+import { DEFAULT_SPEC, type DeploySpec } from "../adapters/compute/provider";
 import { devLlm } from "../adapters/llm/cli";
 import { DuckDbEngine } from "../adapters/source/duckdb";
 import { type FileFormat, type Source, inferFormat, parseConfig } from "../core/config";
@@ -29,6 +32,8 @@ async function main(argv: string[]): Promise<number> {
       return cmdOnboard(rest);
     case "serve":
       return cmdServe(rest);
+    case "deploy":
+      return cmdDeploy(rest);
     case undefined:
     case "-h":
     case "--help":
@@ -189,6 +194,34 @@ async function cmdServe(args: string[]): Promise<number> {
   return 0; // unreachable
 }
 
+// ── deploy: render a deployment manifest for a compute target ─────────────────
+async function cmdDeploy(args: string[]): Promise<number> {
+  const flags = parseFlags(args);
+  const target = flags.get("target");
+  const provider =
+    target === "akash" ? akashCompute : target === "local" ? localCompute : undefined;
+  const image = flags.get("image");
+  if (!provider || !image) {
+    console.error(
+      "usage: aqueduct deploy --target local|akash --image <ref> [--port 8402] [--dataset examples/exoplanets.csv] [--out file]",
+    );
+    return 1;
+  }
+  const spec: DeploySpec = {
+    ...DEFAULT_SPEC,
+    image,
+    port: Number(flags.get("port") ?? DEFAULT_SPEC.port),
+    dataset: flags.get("dataset") ?? DEFAULT_SPEC.dataset,
+  };
+  const artifact = provider.render(spec);
+  const out = flags.get("out") ?? artifact.filename;
+  writeFileSync(out, artifact.content);
+  console.error(`✓ wrote ${out}  (${provider.target} target, image ${image})`);
+  console.error("\nnext:");
+  for (const note of artifact.notes) console.error(`  • ${note}`);
+  return 0;
+}
+
 // ── tiny arg parser (no dep) ─────────────────────────────────────────────────
 type Flags = { _: string[]; get(key: string): string | undefined };
 function parseFlags(args: string[]): Flags {
@@ -226,6 +259,7 @@ function printHelp() {
 commands:
   onboard <file>      profile a parquet/csv/json file → eval-passed Tap config
   serve   <config>    run the Tap: free /schema, paid /query over MPP sessions
+  deploy              render a deployment manifest (local docker-compose or Akash SDL)
 
 onboard flags:
   --name <n>          Tap name (default: derived from filename)

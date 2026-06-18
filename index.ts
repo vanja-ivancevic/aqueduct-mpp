@@ -40,6 +40,14 @@ export { type Result, ok, err } from "./core/result";
 // adapters — the external seams
 export { DuckDbEngine } from "./adapters/source/duckdb";
 export { claudeCli, codexCli, devLlm } from "./adapters/llm/cli";
+export { localCompute } from "./adapters/compute/local";
+export { akashCompute } from "./adapters/compute/akash";
+export {
+  type ComputeProvider,
+  type DeploySpec,
+  type DeployArtifact,
+  DEFAULT_SPEC,
+} from "./adapters/compute/provider";
 
 // runtime — the hot path
 export { createTapServer, type TapServerOptions } from "./runtime/server";

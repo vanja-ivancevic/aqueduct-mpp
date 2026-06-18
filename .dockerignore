@@ -1,0 +1,12 @@
+node_modules
+dist
+.git
+vendor
+knowledge
+docs
+.firecrawl
+*.tap.json
+*.log
+*.cast
+.env
+.env.*
