@@ -252,7 +252,7 @@
   },
   "cache": {
     "key": "queryHash",
-    "ttl": "1h"
+    "ttl": "5m"
   },
   "evals": {
     "golden": [

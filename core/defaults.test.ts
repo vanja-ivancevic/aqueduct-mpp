@@ -61,4 +61,23 @@ describe("deriveConfig end-to-end on a real CSV (no LLM)", () => {
     expect(r.value.config.pricing.unitDefinition).toBe("one row of cities");
     expect(r.value.attempts).toBe(1);
   });
+
+  it("clamps cache.ttl down to a sub-default freshness window (keeps the config valid)", async () => {
+    const i = input();
+    const tight = {
+      ...i,
+      source: { ...i.source, contract: { ...i.source.contract, freshnessWindow: "5m" } },
+    };
+    const r = await deriveConfig(tight, { engine });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.value.config.cache.ttl).toBe("5m"); // default "1h" clamped to the 5m window
+  });
+
+  it("leaves cache.ttl at the default when the freshness window is larger", async () => {
+    const r = await deriveConfig(input(), { engine }); // freshnessWindow "24h"
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.value.config.cache.ttl).toBe("1h");
+  });
 });

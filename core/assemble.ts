@@ -9,6 +9,7 @@
  */
 import { z } from "zod";
 import { type FieldSpec, QueryInterface, type Source, type ValidatedConfig } from "./config";
+import { durationMs } from "./duration";
 import type { EvalEngine, EvalReport } from "./evals";
 
 // ── the profiling capability both paths need (injected — invariant 6) ────────
@@ -74,6 +75,13 @@ export type OnboardResult = {
   attempts: number;
 };
 
+/** Cache TTL clamped to the source's freshness window — a served result can never be staler than the
+ * window the builder advertises (enforced as a config invariant; clamped here so onboarding can't trip it). */
+function clampTtl(ttl: string, source: Source): string {
+  const window = source.contract.freshnessWindow;
+  return durationMs(ttl) <= durationMs(window) ? ttl : window;
+}
+
 /** Merge the builder's facts + inferred schema + decisions into a full (unvalidated) config object. */
 export function assemble(
   input: OnboardInput,
@@ -93,7 +101,10 @@ export function assemble(
       unitPrice: opts.unitPrice ?? DEFAULTS.unitPrice,
       currency: input.currency,
     },
-    cache: { key: "queryHash", ttl: opts.cacheTtl ?? DEFAULTS.cacheTtl },
+    // The cache may not outlive the advertised freshness window (config invariant). A sub-window
+    // freshness (e.g. "5m" for a minute-cadence feed) clamps the default TTL down, so onboarding
+    // always yields a valid config instead of erroring on the default.
+    cache: { key: "queryHash", ttl: clampTtl(opts.cacheTtl ?? DEFAULTS.cacheTtl, input.source) },
     evals: {
       golden: decisions.golden,
       invariants: decisions.invariants,

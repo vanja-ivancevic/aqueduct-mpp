@@ -17,7 +17,7 @@ keeps it cheap (sub-cent per row) and fast (cached reads < 100 ms).
 ## Watch it run
 
 A terminal recording of an LLM answering a natural-language question by buying *only the rows it
-needs* from a live Tap of NASA's exoplanet archive (~1,500 planets) — discover terms (free) → form a
+needs* from a live Tap of NASA's exoplanet archive (~6,000 planets) — discover terms (free) → form a
 query → pay per row over MPP → settle on-chain → answer:
 
 ```
@@ -27,6 +27,24 @@ asciinema play docs/aqueduct-ask.cast      # or: asciinema upload docs/aqueduct-
 Reproduce it live (Tempo testnet): `npx tsx scripts/ask.ts "your question"`. The agent uses the
 **`aqueduct` skill** (`skills/aqueduct/`) — a `SKILL.md` plus a paid-query tool — so any Claude Code
 agent can discover, query, and pay a Tap. The LLM is the *client*; it never sits in the serving path.
+
+## Example Taps & the comparison
+
+A gallery of `examples/*.tap.json` over **fresh** public data — each a different reason an agent
+struggles, all served as one constrained query:
+
+| Tap | data | refresh | why a Tap beats fetching it ad-hoc |
+|---|---|---|---|
+| `exoplanets` | NASA Exoplanet Archive (live) | on query | hard to find/fetch (TAP + ADQL) |
+| `usgs-earthquakes` | USGS quake feed (live CSV) | ~60s | fresh — yesterday's copy is wrong |
+| `nasa-neo` | NASA near-Earth asteroids | daily | nested JSON, needs flattening |
+| `fx-rates` | ECB reference rates | daily | one canonical, sourced value |
+| `wiki-pageviews` | top Wikipedia articles | daily | nested JSON, vendor-curated |
+
+`scripts/refresh-*.ts` are example **builder pipelines** (the updater Aqueduct doesn't own). Measured
+head-to-head (`scripts/bench-gallery.ts`, opus-4.8): the Tap data plane is **~1,800× cheaper** and
+8–5,780× faster than Claude Code fetching from scratch, at equal freshness — full table and the
+data-vendor framing in [`knowledge/17-gallery-comparison.md`](./knowledge/17-gallery-comparison.md).
 
 ## Install
 

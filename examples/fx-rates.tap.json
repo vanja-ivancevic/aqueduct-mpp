@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "name": "fx-rates",
+  "source": {
+    "format": "json",
+    "location": {
+      "via": "path",
+      "ref": "/Fast/Shared/workspaces/mpp-hackathon-project/examples/fx-rates.json"
+    },
+    "authEnv": null,
+    "contract": {
+      "determinism": "deterministic",
+      "freshnessWindow": "24h"
+    }
+  },
+  "schema": [
+    {
+      "name": "base",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "currency",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "rate",
+      "type": "number",
+      "required": false
+    },
+    {
+      "name": "date",
+      "type": "timestamp",
+      "required": false
+    }
+  ],
+  "query": {
+    "filters": [
+      {
+        "field": "base",
+        "ops": ["eq", "ne", "in", "like"]
+      },
+      {
+        "field": "currency",
+        "ops": ["eq", "ne", "in", "like"]
+      },
+      {
+        "field": "rate",
+        "ops": ["eq", "ne", "lt", "lte", "gt", "gte", "in"]
+      },
+      {
+        "field": "date",
+        "ops": ["eq", "ne", "lt", "lte", "gt", "gte"]
+      }
+    ],
+    "selectable": "*",
+    "sortable": ["base", "currency", "rate", "date"],
+    "maxLimit": 1000,
+    "defaultLimit": 100
+  },
+  "pricing": {
+    "unit": "row",
+    "unitDefinition": "one row of fx-rates",
+    "unitPrice": "0.0001",
+    "currency": "0x20c0000000000000000000000000000000000000"
+  },
+  "cache": {
+    "key": "queryHash",
+    "ttl": "1h"
+  },
+  "evals": {
+    "golden": [
+      {
+        "request": {
+          "limit": 1000
+        },
+        "expectRowCount": 29
+      }
+    ],
+    "invariants": [],
+    "sampleSize": 20
+  },
+  "mpp": {
+    "intent": "session",
+    "recipient": "0x000000000000000000000000000000000000dEaD",
+    "currency": "0x20c0000000000000000000000000000000000000",
+    "feePayer": true
+  }
+}

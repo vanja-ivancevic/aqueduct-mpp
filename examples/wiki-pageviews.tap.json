@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "name": "wiki-pageviews",
+  "source": {
+    "format": "json",
+    "location": {
+      "via": "path",
+      "ref": "/Fast/Shared/workspaces/mpp-hackathon-project/examples/wiki-pageviews.json"
+    },
+    "authEnv": null,
+    "contract": {
+      "determinism": "deterministic",
+      "freshnessWindow": "24h"
+    }
+  },
+  "schema": [
+    {
+      "name": "rank",
+      "type": "integer",
+      "required": false
+    },
+    {
+      "name": "article",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "views",
+      "type": "integer",
+      "required": false
+    },
+    {
+      "name": "date",
+      "type": "timestamp",
+      "required": false
+    }
+  ],
+  "query": {
+    "filters": [
+      {
+        "field": "rank",
+        "ops": ["eq", "ne", "lt", "lte", "gt", "gte", "in"]
+      },
+      {
+        "field": "article",
+        "ops": ["eq", "ne", "in", "like"]
+      },
+      {
+        "field": "views",
+        "ops": ["eq", "ne", "lt", "lte", "gt", "gte", "in"]
+      },
+      {
+        "field": "date",
+        "ops": ["eq", "ne", "lt", "lte", "gt", "gte"]
+      }
+    ],
+    "selectable": "*",
+    "sortable": ["rank", "article", "views", "date"],
+    "maxLimit": 1000,
+    "defaultLimit": 100
+  },
+  "pricing": {
+    "unit": "row",
+    "unitDefinition": "one row of wiki-pageviews",
+    "unitPrice": "0.0001",
+    "currency": "0x20c0000000000000000000000000000000000000"
+  },
+  "cache": {
+    "key": "queryHash",
+    "ttl": "1h"
+  },
+  "evals": {
+    "golden": [
+      {
+        "request": {
+          "limit": 1000
+        },
+        "expectRowCount": 996
+      }
+    ],
+    "invariants": [],
+    "sampleSize": 20
+  },
+  "mpp": {
+    "intent": "session",
+    "recipient": "0x000000000000000000000000000000000000dEaD",
+    "currency": "0x20c0000000000000000000000000000000000000",
+    "feePayer": true
+  }
+}
