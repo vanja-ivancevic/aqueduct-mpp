@@ -153,6 +153,7 @@ Reference docs live in [`docs/`](./docs/README.md):
 - [Tap config](./docs/config.md) — the frozen source of truth, field by field
 - [Query interface](./docs/query.md) — the agent request shape + why agents never send SQL
 - [Pricing & billing](./docs/pricing.md) — `rows × unitPrice` over an MPP session
+- [Discovery & consumption](./docs/discovery.md) — find/buy Taps via MPP's registry, the skill, the MCP server
 - [Deploy](./DEPLOY.md) — ship a Tap local ↔ Akash · [Demo](./DEMO.md) — the live LLM-buys-data run
 
 Design docs (the *why*) are in [`knowledge/`](./knowledge/00-index.md).

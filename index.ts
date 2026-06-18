@@ -37,6 +37,16 @@ export { planQuery, type QueryPlan, type AgentRequest } from "./core/query";
 // errors-as-values
 export { type Result, ok, err } from "./core/result";
 
+// discovery — no directory of our own; render/select entries in MPP's registry
+export {
+  renderServiceEntry,
+  selectTaps,
+  DISCOVERY_URL,
+  AQUEDUCT_TAG,
+  type MppService,
+  type TapEntry,
+} from "./core/registry";
+
 // adapters — the external seams
 export { DuckDbEngine } from "./adapters/source/duckdb";
 export { claudeCli, codexCli, devLlm } from "./adapters/llm/cli";
@@ -48,6 +58,10 @@ export {
   type DeployArtifact,
   DEFAULT_SPEC,
 } from "./adapters/compute/provider";
+
+// consumption client — the agent's three read ops (skill + MCP wrap these)
+export { discover, fetchSchema, buyRows, type BuyResult } from "./adapters/client/client";
+export { runMcpServer } from "./adapters/client/mcp";
 
 // runtime — the hot path
 export { createTapServer, type TapServerOptions } from "./runtime/server";

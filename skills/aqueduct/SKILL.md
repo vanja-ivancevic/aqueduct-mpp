@@ -16,6 +16,18 @@ don't already have: "the 5 largest settled transactions for account 42", "all se
 read over 90 last hour", "Japanese cities by population". If the data is small and local, just read
 it. If you need bulk export, a Tap isn't the cheap path — Taps are for *targeted* reads.
 
+## Finding a Tap (only if you don't already have a URL)
+
+If you were given a Tap URL, skip this. To find one by need, search MPP's public registry — free, no
+wallet:
+
+```
+npx tsx skills/aqueduct/query.ts --discover "japanese cities"
+```
+
+Returns `[{ id, name, url, description, price, currency }]` — Aqueduct Taps only. Pick a `url`, then
+run the flow below against it.
+
 ## The flow (always in this order)
 
 1. **Discover terms — free.** Read the schema to learn the columns, which fields are filterable, and

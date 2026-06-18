@@ -12,6 +12,7 @@ reference behind it.
 | [config.md](./config.md) | The Tap config — the frozen source of truth for a Tap's behavior, field by field |
 | [query.md](./query.md) | The agent request shape and the constrained query interface (why agents never send SQL) |
 | [pricing.md](./pricing.md) | How a request is priced and billed over an MPP session |
+| [discovery.md](./discovery.md) | Finding & consuming Taps — `register`, the skill, the MCP server (no directory of our own) |
 | [../DEPLOY.md](../DEPLOY.md) | Ship a Tap as a container — local docker-compose ↔ Akash |
 | [../DEMO.md](../DEMO.md) | The live LLM-buys-data demo on NASA's exoplanet archive |
 

@@ -13,6 +13,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { basename, extname, resolve } from "node:path";
 import { serve } from "@hono/node-server";
 import { privateKeyToAccount } from "viem/accounts";
+import { runMcpServer } from "../adapters/client/mcp";
 import { akashCompute } from "../adapters/compute/akash";
 import { localCompute } from "../adapters/compute/local";
 import { DEFAULT_SPEC, type DeploySpec } from "../adapters/compute/provider";
@@ -23,6 +24,7 @@ import { PATH_USD } from "../core/constants";
 import { deriveConfig } from "../core/defaults";
 import { validate } from "../core/evals";
 import { type OnboardInput, onboard } from "../core/onboard";
+import { renderServiceEntry } from "../core/registry";
 import { createTapServer } from "../runtime/server";
 
 async function main(argv: string[]): Promise<number> {
@@ -34,6 +36,10 @@ async function main(argv: string[]): Promise<number> {
       return cmdServe(rest);
     case "deploy":
       return cmdDeploy(rest);
+    case "register":
+      return cmdRegister(rest);
+    case "mcp":
+      return cmdMcp();
     case undefined:
     case "-h":
     case "--help":
@@ -222,6 +228,61 @@ async function cmdDeploy(args: string[]): Promise<number> {
   return 0;
 }
 
+// ── register: render the MPP registry entry for a deployed Tap ────────────────
+async function cmdRegister(args: string[]): Promise<number> {
+  const flags = parseFlags(args);
+  const file = flags._[0];
+  const url = flags.get("url");
+  if (!file || !url) {
+    console.error(
+      "usage: aqueduct register <config.json> --url https://<tap-host> [--description d] [--provider-name n] [--provider-url u]",
+    );
+    return 1;
+  }
+
+  let raw: unknown;
+  try {
+    raw = JSON.parse(readFileSync(resolve(file), "utf8"));
+  } catch (e) {
+    console.error(`cannot read config '${file}': ${e instanceof Error ? e.message : String(e)}`);
+    return 1;
+  }
+  const parsed = parseConfig(raw);
+  if (!parsed.ok) {
+    console.error("config is invalid:");
+    for (const i of parsed.error.issues) console.error(`  - ${i.path}: ${i.message}`);
+    return 1;
+  }
+
+  const providerName = flags.get("provider-name");
+  const providerUrl = flags.get("provider-url");
+  const entry = renderServiceEntry(parsed.value, {
+    url,
+    description: flags.get("description"),
+    provider: providerName || providerUrl ? { name: providerName, url: providerUrl } : undefined,
+  });
+
+  // The entry goes to stdout (pipe it / paste into a PR); guidance goes to stderr.
+  console.log(JSON.stringify(entry, null, 2));
+  console.error(
+    "\nAqueduct hosts no directory — discovery rides on MPP's registry. To publish this Tap:",
+  );
+  console.error(
+    "  • add this entry to `schemas/services.ts` in github.com/tempoxyz/mpp (a PR; curated)",
+  );
+  console.error(
+    "  • until merged, agents reach it directly by URL — /schema is free + self-describing",
+  );
+  return 0;
+}
+
+// ── mcp: serve the consumption client (discover/schema/query) over MCP stdio ───
+async function cmdMcp(): Promise<number> {
+  runMcpServer();
+  await new Promise<never>(() => {}); // run until stdin closes / process is killed
+  return 0; // unreachable
+}
+
 // ── tiny arg parser (no dep) ─────────────────────────────────────────────────
 type Flags = { _: string[]; get(key: string): string | undefined };
 function parseFlags(args: string[]): Flags {
@@ -260,6 +321,8 @@ commands:
   onboard <file>      profile a parquet/csv/json file → eval-passed Tap config
   serve   <config>    run the Tap: free /schema, paid /query over MPP sessions
   deploy              render a deployment manifest (local docker-compose or Akash SDL)
+  register <config>   render the MPP registry entry to publish a deployed Tap (--url)
+  mcp                 serve the consumption client (discover/schema/query) over MCP stdio
 
 onboard flags:
   --name <n>          Tap name (default: derived from filename)
