@@ -129,7 +129,7 @@ and the `DuckDbEngine` adapter.
   perimeter — declared filters/columns → an abstract plan, never raw SQL), the eval engine, BigInt
   pricing.
 - **`adapters/`** — the external seams: `source/duckdb` (reads parquet/CSV/JSON), `llm/cli`
-  (claude/codex for the optional refine pass).
+  (claude/codex for the optional refine pass), `compute/{local,akash}` (renders the deploy manifest).
 - **`runtime/`** — the hot path: a Hono server that executes a config behind an MPP session charge,
   plus a TTL result cache.
 
@@ -139,10 +139,23 @@ See `CLAUDE.md` for the full architecture and its invariants.
 
 Working end-to-end on the Tempo Moderato testnet: onboard → serve → agent makes **multiple** paid
 requests on one session channel (cumulative vouchers, cache hit on repeats) → `200` + rows + receipt →
-a single on-chain settle at close. Today's scope is **static structured files** (parquet / CSV / JSON).
+a single on-chain settle at close. Ships as a stateless container that runs the same locally and on
+Akash ([DEPLOY.md](./DEPLOY.md)). Today's scope is **static structured files** (parquet / CSV / JSON).
 Known limits: a single in-process session store (multi-instance deploys need a shared store, on the
-roadmap) and a hosted (Akash) deployment (roadmap). Fully-sponsored agent gas needs a separate sponsor
-wallet (`AQUEDUCT_SPONSOR_KEY`); without one, agents self-pay gas.
+roadmap), and SSE streaming + volatile/live sources are roadmap. Fully-sponsored agent gas needs a
+separate sponsor wallet (`AQUEDUCT_SPONSOR_KEY`); without one, agents self-pay gas.
+
+## Documentation
+
+Reference docs live in [`docs/`](./docs/README.md):
+
+- [HTTP API](./docs/http-api.md) — `/schema`, `GET`/`POST /query`, status codes, the receipt
+- [Tap config](./docs/config.md) — the frozen source of truth, field by field
+- [Query interface](./docs/query.md) — the agent request shape + why agents never send SQL
+- [Pricing & billing](./docs/pricing.md) — `rows × unitPrice` over an MPP session
+- [Deploy](./DEPLOY.md) — ship a Tap local ↔ Akash · [Demo](./DEMO.md) — the live LLM-buys-data run
+
+Design docs (the *why*) are in [`knowledge/`](./knowledge/00-index.md).
 
 ## Links
 
