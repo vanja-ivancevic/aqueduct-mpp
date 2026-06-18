@@ -141,10 +141,13 @@ export async function* streamRows(
     opts.onClose?.(err, receipt);
   };
 
+  // Request rides in a header (not the URL query) so the channel-voucher POSTs the SSE driver sends to
+  // this same path aren't misclassified as billable content by MPP — see runtime/stream.ts.
   const q = Buffer.from(JSON.stringify(request)).toString("base64url");
   try {
-    const stream = await session.sse(`${base(tapUrl)}/query/stream?q=${q}`, {
+    const stream = await session.sse(`${base(tapUrl)}/query/stream`, {
       onReceipt: opts.onReceipt,
+      headers: { "x-aqueduct-query": q },
     });
     let index = 0;
     for await (const data of stream) {

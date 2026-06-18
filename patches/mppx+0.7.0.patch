@@ -1,0 +1,33 @@
+diff --git a/node_modules/mppx/dist/tempo/server/internal/transport.js b/node_modules/mppx/dist/tempo/server/internal/transport.js
+index 4dcd9eb..56d2ea2
+--- a/node_modules/mppx/dist/tempo/server/internal/transport.js
++++ b/node_modules/mppx/dist/tempo/server/internal/transport.js
+@@ -107,6 +107,12 @@ export function sse(options) {
+             if (!shouldChargePlainResponse(request, payload)) {
+                 return baseResponse;
+             }
++            // Aqueduct patch: under SSE, a `voucher` post only raises voucher coverage — the live stream
++            // meters content. Plain-charging it here returns a spurious 402 that corrupts the client's
++            // voucher accounting and breaks channel close. (open is already covered by the prepaid check.)
++            if (payload.action === 'voucher') {
++                return baseResponse;
++            }
+             const currentReceipt = receipt;
+             if (hasPrepaidSessionTick(currentReceipt)) {
+                 return baseResponse;
+diff --git a/node_modules/mppx/dist/tempo/session/server/Settlement.js b/node_modules/mppx/dist/tempo/session/server/Settlement.js
+index 91e0539..2f54d9e
+--- a/node_modules/mppx/dist/tempo/session/server/Settlement.js
++++ b/node_modules/mppx/dist/tempo/session/server/Settlement.js
+@@ -117,6 +117,11 @@ export async function applyVerifiedHttpAccounting(parameters) {
+         return receipt;
+     if (payloadAction !== 'open' && payloadAction !== 'voucher')
+         return receipt;
++    // Aqueduct patch: under SSE, content is metered by the live stream (Sse.serve). A `voucher` post
++    // only raises voucher coverage — charging it here double-counts a tick that is never credited back
++    // into the running stream's prepaidUnits, so the next commit fails. Only `open` prepays its tick.
++    if (sseEnabled && payloadAction === 'voucher')
++        return receipt;
+     const requestAmount = parameters.getRequestAmount();
+     const charged = await parameters.charge(receipt.channelId, requestAmount);
+     const settlementTxHash = await parameters.settleCharged(charged);

@@ -1,9 +1,10 @@
-# Per-row streaming (experimental)
+# Per-row streaming (opt-in)
 
-> **Status: experimental, opt-in.** The data path works end-to-end on the Moderato testnet — but
-> session-close voucher reconciliation has a known open issue (see [below](#known-limitation)). Not
-> promoted out of experimental, not part of the MVP. The shippable path is per-query
-> [`GET /query`](./http-api.md#get-query).
+> **Status: works end-to-end on the Moderato testnet, opt-in via `--stream`.** An agent streams rows
+> over SSE, is metered per row, and the channel settles on-chain at close. It requires two fixes to
+> mppx's SSE metering, shipped as [`patches/mppx+0.7.0.patch`](../patches/mppx+0.7.0.patch) (applied
+> automatically by the `postinstall` hook). Still not the MVP — the default path is per-query
+> [`GET /query`](./http-api.md#get-query); streaming is for the bulk / pay-as-you-go shape.
 
 The MVP prices a whole query up front and returns one JSON body. **Streaming** adds a second serve
 mode that delivers rows as a [Server-Sent Events](https://developer.mozilla.org/docs/Web/API/Server-sent_events)
@@ -61,15 +62,23 @@ server-side before any charge.
 
 The bundled demo: `npx tsx scripts/stream-demo.ts` (needs network + the testnet faucet).
 
-## Known limitation
+## The two mppx patches
 
-Per-row **delivery and metering work**: the 402 challenge, on-chain channel open, SSE delivery, and
-per-row charge all run, and the client consumes streamed rows with per-row receipts. The open issue is
-**session close** — once prepaid ticks are involved, the server's `spent` and the client's close
-voucher disagree, and the MPP SSE layer aborts the stream. `streamRows` surfaces this through `onClose`
-(and the read error) rather than throwing, so rows already consumed are never lost. The accounting lives
-inside the MPP SSE session layer, not in Aqueduct — likely an mppx integration detail to raise upstream.
+Streaming needs two fixes to mppx's SSE session metering ([`patches/mppx+0.7.0.patch`](../patches/mppx+0.7.0.patch)),
+both the same bug in parallel code paths. Under SSE, content is metered by the live stream
+(`Sse.serve`), so a **`voucher` management post must not be charged as content** — but stock mppx
+charges it in two places (`Settlement.applyVerifiedHttpAccounting` and the SSE transport's
+plain-response path). That charge double-counts a tick the running stream never credits back into its
+`prepaidUnits`, so the next per-row commit fails (`reserved voucher coverage is no longer available`)
+and the spurious 402s corrupt the client's voucher accounting, breaking close. The patch skips the
+charge for `voucher` posts under SSE; `open` still prepays its single tick. Both are candidates to
+upstream. `patch-package` applies them via `postinstall`.
 
-Until close settles cleanly this stays experimental and behind `--stream`. Promoting it means: close
-reconciles on-chain, and the capability is declared in the [Tap config](./config.md) (invariant 2)
-rather than a serve-time flag.
+## Known edge: mid-stream disconnect
+
+Consuming the **full** stream settles cleanly. An agent that disconnects *mid-stream* (breaks the loop
+early) leaves its close voucher one row short of the server's `spent`, so the close is rejected.
+`streamRows` surfaces that via `onClose` (and the read path) instead of throwing, so consumed rows are
+never lost — but the channel won't settle until this is handled. Promoting streaming out of opt-in
+means fixing this edge and declaring a `streaming` capability in the [Tap config](./config.md)
+(invariant 2) rather than a serve-time flag.

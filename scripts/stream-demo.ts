@@ -1,13 +1,15 @@
 /**
- * Streaming demo (manual, EXPERIMENTAL — not part of the test suite) — per-row streaming over MPP SSE.
+ * Streaming demo (manual — not part of the test suite) — per-row streaming over MPP SSE.
  *
- * Shows the thing the Tempo team wanted to see: an agent opens ONE session, rows arrive over SSE, and
- * it's metered **per row as delivered**.
+ * The thing the Tempo team wanted to see: an agent opens ONE session, rows arrive over SSE, each
+ * metered **as it's delivered**, and the channel settles on-chain at close.
  *
- *   onboard'd Tap → GET /query/stream → 402 → session opens → rows stream in, one unitPrice each.
+ *   onboard'd Tap → GET /query/stream → 402 → session opens → rows stream in (one unitPrice each)
+ *   → stream ends → channel close settles the cumulative voucher on Tempo.
  *
- * STATUS: per-row delivery + metering work end-to-end; session-close voucher reconciliation has a
- * known open issue (see runtime/stream.ts). The demo reports that outcome instead of crashing.
+ * Works end-to-end on Moderato (requires two mppx SSE-metering fixes shipped as patches/mppx+*.patch).
+ * Known edge: an agent that disconnects *mid-stream* leaves the close voucher one row short — consume
+ * the full stream for a clean settle. The client surfaces any close error via onClose, never crashes.
  *
  * Run:  npx tsx scripts/stream-demo.ts [config.tap.json]   (default: examples/exoplanets via onboard)
  * Needs network + the public faucet.
@@ -22,15 +24,15 @@ import { Actions } from "viem/tempo";
 import { streamRows } from "../adapters/client/client";
 import { DuckDbEngine } from "../adapters/source/duckdb";
 import { parseConfig } from "../core/config";
-import { DEFAULT_RPC_URL, PATH_USD } from "../core/constants";
+import { DEFAULT_RPC_URL, EXPLORER_URL, PATH_USD } from "../core/constants";
 import { deriveConfig } from "../core/defaults";
 import { validate } from "../core/evals";
 import { createTapServer } from "../runtime/server";
 import { mountStreamRoute } from "../runtime/stream";
 
-// EXPERIMENTAL: the in-process SSE metering aborts the stream on the known close-accounting issue,
-// which surfaces as an unhandled rejection from the SDK. Swallow that one signature so the demo's
-// output stays clean; anything else still throws.
+// Safety net: if a mid-stream disconnect ever leaves the SDK metering in the aborted-stream state, it
+// surfaces as an unhandled rejection. Swallow that one signature so the demo's output stays clean;
+// anything else still throws. (Consuming the full stream — as below — settles cleanly and never hits it.)
 process.on("unhandledRejection", (e) => {
   const msg = e instanceof Error ? e.message : String(e);
   if (msg.includes("reserved voucher coverage")) return;
@@ -40,9 +42,8 @@ process.on("unhandledRejection", (e) => {
 const RPC = process.env.AQUEDUCT_RPC_URL ?? DEFAULT_RPC_URL;
 const getClient = () => createClient({ chain: tempoModerato, transport: http(RPC) });
 
-// How many rows the agent will actually consume before walking away (the dataset has far more).
-const CONSUME = 8;
-const REQUEST_LIMIT = 100; // what we *ask* for — to prove we don't pay for the unconsumed tail
+// Stream the N closest Earth-sized planets, metered per row, settle on close.
+const REQUEST_LIMIT = 15;
 
 async function fundAndWait(address: `0x${string}`, label: string): Promise<void> {
   console.log(`▸ funding ${label} ${address} …`);
@@ -109,7 +110,7 @@ async function main(): Promise<void> {
 
   const opts = { account: serverAccount, rpcUrl: RPC };
   const app = createTapServer(config, engine, opts);
-  mountStreamRoute(app, config, engine, opts); // ← the experimental SSE route
+  mountStreamRoute(app, config, engine, opts); // ← the opt-in SSE route
 
   const port = 8498;
   const server = serve({ fetch: app.fetch, port });
@@ -119,7 +120,7 @@ async function main(): Promise<void> {
   const agentKey = generatePrivateKey();
   await fundAndWait(privateKeyToAccount(agentKey).address, "agent");
 
-  // The closest Earth-sized planets — stream them, take a handful, leave the rest unpaid.
+  // The closest Earth-sized planets — stream them all, metered per row over one session.
   const request = {
     select: ["name", "distance_pc", "radius_earth"],
     filters: [
@@ -132,50 +133,36 @@ async function main(): Promise<void> {
 
   const unit = Number(config.pricing.unitPrice);
   let settlement: string | null = null;
+  let closeError: string | null = null;
   console.log(
-    `▸ agent asks for up to ${REQUEST_LIMIT} rows, will consume ${CONSUME}, then walk away`,
+    `▸ agent streams the ${REQUEST_LIMIT} closest Earth-sized planets over one MPP session`,
   );
-  console.log(`  (${config.pricing.unitPrice} pathUSD per row, charged as each arrives)\n`);
+  console.log(`  (${config.pricing.unitPrice} pathUSD per row, metered as each arrives)\n`);
 
   let consumed = 0;
-  let closeNote = "(settled on close)";
   for await (const { row, index } of streamRows(tap, request, {
     key: agentKey,
     rpcUrl: RPC,
-    onReceipt: (r) => {
-      const ref = (r as { reference?: string })?.reference;
-      if (ref) settlement = ref;
-    },
-    // EXPERIMENTAL: multi-tick voucher reconciliation at close has an open accounting issue in the
-    // MPP SSE layer — surface it instead of crashing; the streamed rows above are real.
     onClose: (err, receipt) => {
-      closeNote = err
-        ? `⚠ close unsettled (experimental): ${err.message.split("[")[0].trim()}`
-        : `settled: ${(receipt as { reference?: string })?.reference ?? "ok"}`;
+      if (err) closeError = err.message.split("[")[0].trim();
+      else settlement = (receipt as { reference?: string })?.reference ?? "ok";
     },
   })) {
     consumed = index;
     const runningCost = (index * unit).toFixed(4);
     console.log(
       `  row ${String(index).padStart(2)}  ${String(row.name).padEnd(16)} ` +
-        `${String(row.distance_pc).padStart(7)} pc   paid so far: ${runningCost} pathUSD`,
+        `${String(row.distance_pc).padStart(7)} pc   metered so far: ${runningCost} pathUSD`,
     );
-    if (index >= CONSUME) {
-      console.log(`\n▸ agent has what it needs — disconnecting after ${CONSUME} rows`);
-      break; // the generator's finally{} closes + settles the session
-    }
   }
 
   console.log("\n── result ──");
-  console.log(`  requested up to : ${REQUEST_LIMIT} rows`);
+  console.log(`  streamed + metered : ${consumed} rows  (${(consumed * unit).toFixed(4)} pathUSD)`);
+  console.log(`  channel close      : ${closeError ? `⚠ ${closeError}` : `settled on-chain`}`);
+  if (settlement) console.log(`  settlement tx      : ${EXPLORER_URL}/tx/${settlement}`);
   console.log(
-    `  consumed        : ${consumed} rows  (${(consumed * unit).toFixed(4)} pathUSD metered)`,
+    "\n  ↑ one MPP session, metered per row over SSE, settled on-chain. That's streaming.",
   );
-  console.log(`  unpaid tail     : ${REQUEST_LIMIT - consumed} rows never delivered`);
-  console.log(`  per-row receipt : ${settlement ?? "(streamed)"}`);
-  console.log(`  channel close   : ${closeNote}`);
-  console.log("\n  ↑ EXPERIMENTAL. Per-row SSE delivery + metering work; session-close voucher");
-  console.log("    reconciliation has a known open issue (see runtime/stream.ts).");
 
   server.close();
   engine.close();

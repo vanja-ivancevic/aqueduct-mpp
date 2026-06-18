@@ -11,17 +11,16 @@
  * realm, and secret as the MVP server — only the transport differs. Still no LLM on the path; the
  * generator is pure config execution, metered by the SDK.
  *
- * Not yet config-governed (invariant 2): enabled by a serve-time flag while we prove it out. Promoting
- * it to a declared `streaming` capability in the Tap config is the follow-up before it leaves
- * experimental.
+ * STATUS (verified on Moderato testnet): works end-to-end — 402 session challenge → on-chain channel
+ * open → per-row SSE delivery + metering → channel close settles the cumulative voucher on-chain. This
+ * needs two fixes to mppx's SSE session metering, shipped as `patches/mppx+*.patch` (a `voucher`
+ * management post must not be charged as content — under SSE the live stream meters content; charging
+ * the voucher double-counts a tick and breaks the next commit + the close). Both are candidates to
+ * upstream. Known edge: an agent that disconnects *mid-stream* leaves its close voucher one row short;
+ * consume the full stream for a clean settle. The client surfaces close errors via `onClose`.
  *
- * STATUS (experimental, verified on Moderato testnet): the data path works end-to-end — 402 session
- * challenge → on-chain channel open → per-row SSE delivery → the client consumes rows and the per-row
- * metering charges as they're delivered. OPEN ISSUE: multi-tick voucher reconciliation at session
- * *close* mismatches (server `spent` vs the client's close voucher) once prepaid ticks are involved —
- * the accounting lives inside the MPP SSE session layer, not here. Likely an mppx integration detail
- * to raise upstream. The client surfaces the close outcome via `onClose` instead of throwing, so the
- * streamed rows are never lost. Do not promote out of experimental until close settles cleanly.
+ * Still opt-in (`--stream`) and not yet config-governed — promoting it means declaring a `streaming`
+ * capability in the Tap config (invariant 2) and handling the mid-stream-abort close edge.
  */
 import { randomBytes } from "node:crypto";
 import type { Hono } from "hono";
@@ -91,13 +90,17 @@ export function mountStreamRoute(
   });
 
   app.get("/query/stream", async (c) => {
-    const q = c.req.query("q");
+    // The agent request rides in a HEADER, not the URL query: the client's SSE driver POSTs channel
+    // vouchers to this same path, and MPP classifies a POST whose captured request URL carries a query
+    // string as billable *content* — which would double-charge each voucher. A clean URL keeps vouchers
+    // classified as (free) management. (GET is always content, so the stream itself still bills.)
+    const q = c.req.header("x-aqueduct-query");
     let body: unknown = {};
     if (q) {
       try {
         body = JSON.parse(Buffer.from(q, "base64url").toString("utf8"));
       } catch {
-        return c.json({ error: "q must be base64url-encoded JSON" }, 400);
+        return c.json({ error: "x-aqueduct-query must be base64url-encoded JSON" }, 400);
       }
     }
 
@@ -126,8 +129,9 @@ export function mountStreamRoute(
   app.post("/query/stream", async (c) => {
     const gated = await charge(c.req.raw);
     if (gated.status === 402) return gated.challenge;
-    // SSE management responses must pass an explicit body (unlike the HTTP transport's no-arg
-    // withReceipt()): a voucher/open/top-up/close post carries no content, so return a 204.
-    return gated.withReceipt(new Response(null, { status: 204 }));
+    // SSE management responses must pass an explicit response for withReceipt() to decorate. Use 200
+    // (not 204): the client needs the attached Payment-Receipt to learn what the open/voucher charged,
+    // or its spent-tracking falls short of the server's and the channel close is rejected.
+    return gated.withReceipt(new Response(null, { status: 200 }));
   });
 }
