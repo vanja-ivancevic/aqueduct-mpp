@@ -25,7 +25,6 @@ import { streamRows } from "../adapters/client/client";
 import { DuckDbEngine } from "../adapters/source/duckdb";
 import { parseConfig } from "../core/config";
 import { DEFAULT_RPC_URL, EXPLORER_URL, PATH_USD } from "../core/constants";
-import { deriveConfig } from "../core/defaults";
 import { validate } from "../core/evals";
 import { createTapServer } from "../runtime/server";
 import { mountStreamRoute } from "../runtime/stream";
@@ -71,27 +70,11 @@ async function main(): Promise<void> {
   const configPath = process.argv[2];
   const engine = await DuckDbEngine.create();
 
-  // Load a Tap config (or onboard the bundled exoplanets file deterministically).
-  const base = configPath
-    ? parseConfig(JSON.parse(readFileSync(resolve(configPath), "utf8")))
-    : await (async () => {
-        const r = await deriveConfig(
-          {
-            name: "exoplanets",
-            source: {
-              format: "csv",
-              location: { via: "path", ref: resolve("examples/exoplanets.csv") },
-              authEnv: null,
-              contract: { determinism: "deterministic", freshnessWindow: "24h" },
-            },
-            recipient: "0x0000000000000000000000000000000000000000",
-            currency: PATH_USD,
-          },
-          { engine },
-        );
-        if (!r.ok) throw new Error("onboard failed");
-        return parseConfig(r.value.config);
-      })();
+  // Load a Tap config — defaults to the committed exoplanets Tap, which sources the LIVE NASA archive
+  // (auto-refreshing per its freshnessWindow), so the stream serves fresh data, not a stale snapshot.
+  const base = parseConfig(
+    JSON.parse(readFileSync(resolve(configPath ?? "examples/exoplanets.tap.json"), "utf8")),
+  );
   if (!base.ok) throw new Error(`config invalid: ${JSON.stringify(base.error.issues)}`);
 
   const gate = await validate(base.value, engine);
@@ -158,7 +141,7 @@ async function main(): Promise<void> {
 
   console.log("\n── result ──");
   console.log(`  streamed + metered : ${consumed} rows  (${(consumed * unit).toFixed(4)} pathUSD)`);
-  console.log(`  channel close      : ${closeError ? `⚠ ${closeError}` : `settled on-chain`}`);
+  console.log(`  channel close      : ${closeError ? `⚠ ${closeError}` : "settled on-chain"}`);
   if (settlement) console.log(`  settlement tx      : ${EXPLORER_URL}/tx/${settlement}`);
   console.log(
     "\n  ↑ one MPP session, metered per row over SSE, settled on-chain. That's streaming.",

@@ -71,12 +71,6 @@ export function memoryCache(
   };
 }
 
-/** Parse a config `Duration` ("24h", "15m", "1h30m") to milliseconds. */
-export function parseDurationMs(duration: string): number {
-  const unit: Record<string, number> = { s: 1_000, m: 60_000, h: 3_600_000, d: 86_400_000 };
-  let total = 0;
-  for (const [, n, u] of duration.matchAll(/(\d+)([smhd])/g)) {
-    total += Number(n) * (unit[u as string] ?? 0);
-  }
-  return total;
-}
+/** Parse a config `Duration` ("24h", "15m", "1h30m") to milliseconds. Implemented in core (pure, so
+ * config validation can enforce cache.ttl <= freshnessWindow); re-exported here for the cache's callers. */
+export { durationMs as parseDurationMs } from "../core/duration";

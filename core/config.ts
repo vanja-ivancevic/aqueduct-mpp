@@ -13,6 +13,7 @@
  * The `ValidatedConfig` brand makes "served an un-evaluated config" unrepresentable.
  */
 import { z } from "zod";
+import { durationMs } from "./duration";
 import { type Result, err, ok } from "./result";
 
 // ── primitive value shapes ──────────────────────────────────────────────────
@@ -201,6 +202,17 @@ function checkSemantics(c: TapConfig): ConfigIssue[] {
   // nonzero digit. Test the string, not `Number()` — tiny prices like "0.0000001" must not underflow.
   if (!/[1-9]/.test(c.pricing.unitPrice)) {
     issues.push({ path: "pricing.unitPrice", message: "unitPrice must be greater than 0" });
+  }
+  // A cache hit may serve a result up to cache.ttl old; freshnessWindow is the staleness we advertise.
+  // If the cache outlives the window we'd serve data staler than promised — so the window bounds the
+  // TTL. This is what makes freshnessWindow honored (not decorative): the auto-refresh cadence is the
+  // cache expiry, and it can never exceed the advertised window.
+  if (durationMs(c.cache.ttl) > durationMs(c.source.contract.freshnessWindow)) {
+    issues.push({
+      path: "cache.ttl",
+      message:
+        "cache.ttl must be <= source.contract.freshnessWindow (cannot serve staler than advertised)",
+    });
   }
   return issues;
 }

@@ -15,3 +15,5 @@ dist/
 # Research scratch + generated Tap configs (per-builder artifacts)
 .firecrawl/
 *.tap.json
+# …except the example gallery Taps — committed demo fixtures the demos load at runtime.
+!examples/*.tap.json

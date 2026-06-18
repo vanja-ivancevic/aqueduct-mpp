@@ -1,0 +1,275 @@
+{
+  "version": 1,
+  "name": "usgs-earthquakes",
+  "source": {
+    "format": "csv",
+    "location": {
+      "via": "url",
+      "ref": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.csv"
+    },
+    "authEnv": null,
+    "contract": {
+      "determinism": "deterministic",
+      "freshnessWindow": "5m"
+    }
+  },
+  "schema": [
+    {
+      "name": "time",
+      "type": "timestamp",
+      "required": false
+    },
+    {
+      "name": "latitude",
+      "type": "number",
+      "required": false
+    },
+    {
+      "name": "longitude",
+      "type": "number",
+      "required": false
+    },
+    {
+      "name": "depth",
+      "type": "number",
+      "required": false
+    },
+    {
+      "name": "mag",
+      "type": "number",
+      "required": false
+    },
+    {
+      "name": "magType",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "nst",
+      "type": "integer",
+      "required": false
+    },
+    {
+      "name": "gap",
+      "type": "integer",
+      "required": false
+    },
+    {
+      "name": "dmin",
+      "type": "number",
+      "required": false
+    },
+    {
+      "name": "rms",
+      "type": "number",
+      "required": false
+    },
+    {
+      "name": "net",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "id",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "updated",
+      "type": "timestamp",
+      "required": false
+    },
+    {
+      "name": "place",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "type",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "horizontalError",
+      "type": "number",
+      "required": false
+    },
+    {
+      "name": "depthError",
+      "type": "number",
+      "required": false
+    },
+    {
+      "name": "magError",
+      "type": "number",
+      "required": false
+    },
+    {
+      "name": "magNst",
+      "type": "integer",
+      "required": false
+    },
+    {
+      "name": "status",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "locationSource",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "magSource",
+      "type": "string",
+      "required": false
+    }
+  ],
+  "query": {
+    "filters": [
+      {
+        "field": "time",
+        "ops": ["eq", "ne", "lt", "lte", "gt", "gte"]
+      },
+      {
+        "field": "latitude",
+        "ops": ["eq", "ne", "lt", "lte", "gt", "gte", "in"]
+      },
+      {
+        "field": "longitude",
+        "ops": ["eq", "ne", "lt", "lte", "gt", "gte", "in"]
+      },
+      {
+        "field": "depth",
+        "ops": ["eq", "ne", "lt", "lte", "gt", "gte", "in"]
+      },
+      {
+        "field": "mag",
+        "ops": ["eq", "ne", "lt", "lte", "gt", "gte", "in"]
+      },
+      {
+        "field": "magType",
+        "ops": ["eq", "ne", "in", "like"]
+      },
+      {
+        "field": "nst",
+        "ops": ["eq", "ne", "lt", "lte", "gt", "gte", "in"]
+      },
+      {
+        "field": "gap",
+        "ops": ["eq", "ne", "lt", "lte", "gt", "gte", "in"]
+      },
+      {
+        "field": "dmin",
+        "ops": ["eq", "ne", "lt", "lte", "gt", "gte", "in"]
+      },
+      {
+        "field": "rms",
+        "ops": ["eq", "ne", "lt", "lte", "gt", "gte", "in"]
+      },
+      {
+        "field": "net",
+        "ops": ["eq", "ne", "in", "like"]
+      },
+      {
+        "field": "id",
+        "ops": ["eq", "ne", "in", "like"]
+      },
+      {
+        "field": "updated",
+        "ops": ["eq", "ne", "lt", "lte", "gt", "gte"]
+      },
+      {
+        "field": "place",
+        "ops": ["eq", "ne", "in", "like"]
+      },
+      {
+        "field": "type",
+        "ops": ["eq", "ne", "in", "like"]
+      },
+      {
+        "field": "horizontalError",
+        "ops": ["eq", "ne", "lt", "lte", "gt", "gte", "in"]
+      },
+      {
+        "field": "depthError",
+        "ops": ["eq", "ne", "lt", "lte", "gt", "gte", "in"]
+      },
+      {
+        "field": "magError",
+        "ops": ["eq", "ne", "lt", "lte", "gt", "gte", "in"]
+      },
+      {
+        "field": "magNst",
+        "ops": ["eq", "ne", "lt", "lte", "gt", "gte", "in"]
+      },
+      {
+        "field": "status",
+        "ops": ["eq", "ne", "in", "like"]
+      },
+      {
+        "field": "locationSource",
+        "ops": ["eq", "ne", "in", "like"]
+      },
+      {
+        "field": "magSource",
+        "ops": ["eq", "ne", "in", "like"]
+      }
+    ],
+    "selectable": "*",
+    "sortable": [
+      "time",
+      "latitude",
+      "longitude",
+      "depth",
+      "mag",
+      "magType",
+      "nst",
+      "gap",
+      "dmin",
+      "rms",
+      "net",
+      "id",
+      "updated",
+      "place",
+      "type",
+      "horizontalError",
+      "depthError",
+      "magError",
+      "magNst",
+      "status",
+      "locationSource",
+      "magSource"
+    ],
+    "maxLimit": 1000,
+    "defaultLimit": 100
+  },
+  "pricing": {
+    "unit": "row",
+    "unitDefinition": "one row of usgs-earthquakes",
+    "unitPrice": "0.0001",
+    "currency": "0x20c0000000000000000000000000000000000000"
+  },
+  "cache": {
+    "key": "queryHash",
+    "ttl": "1h"
+  },
+  "evals": {
+    "golden": [
+      {
+        "request": {
+          "limit": 1000
+        },
+        "expectRowCount": 254
+      }
+    ],
+    "invariants": [],
+    "sampleSize": 20
+  },
+  "mpp": {
+    "intent": "session",
+    "recipient": "0x000000000000000000000000000000000000dEaD",
+    "currency": "0x20c0000000000000000000000000000000000000",
+    "feePayer": true
+  }
+}

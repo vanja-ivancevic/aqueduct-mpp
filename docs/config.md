@@ -133,6 +133,16 @@ behavior, not a price of zero.)
 Results are cached by a hash of the planned query for `ttl`. A hit serves rows without touching the
 source — this is the `<100 ms` cached path. `key` is fixed at `"queryHash"`.
 
+**Auto-refresh.** When the source `location.via` is `"url"`, the `ttl` *is* the refresh cadence: once a
+cached result expires, the next query re-reads the live source, so served data is never older than
+`ttl`. A builder keeps the upstream current (their own pipeline); the Tap pulls it on this cadence — no
+cron in the runtime.
+
+**Invariant: `cache.ttl` ≤ `source.contract.freshnessWindow`.** A cache hit may serve a result up to
+`ttl` old, and the freshness window is the staleness the Tap *advertises* — so the cache must not
+outlive it. `parseConfig` rejects a config that promises fresher data than it actually refreshes. This
+is what makes `freshnessWindow` an honored guarantee, not a label.
+
 ---
 
 ## `evals`

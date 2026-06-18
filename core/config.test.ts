@@ -72,6 +72,22 @@ describe("parseConfig", () => {
     expect(parseConfig(c).ok).toBe(false);
   });
 
+  it("rejects cache.ttl longer than the freshnessWindow (can't serve staler than advertised)", () => {
+    const c = base() as Mut;
+    c.cache.ttl = "48h";
+    c.source.contract.freshnessWindow = "24h";
+    const r = parseConfig(c);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error.issues.some((i) => i.path === "cache.ttl")).toBe(true);
+  });
+
+  it("accepts cache.ttl equal to the freshnessWindow", () => {
+    const c = base() as Mut;
+    c.cache.ttl = "24h";
+    c.source.contract.freshnessWindow = "24h";
+    expect(parseConfig(c).ok).toBe(true);
+  });
+
   it("rejects an inline secret in authEnv (only env var names allowed)", () => {
     const c = base() as Mut;
     c.source.authEnv = "sk-live-abc123";

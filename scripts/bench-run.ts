@@ -114,7 +114,7 @@ async function main(): Promise<void> {
     const aRaw = await claude(armAPrompt(q.ask), cwd);
     const a: Run = { ...aRaw, correct: q.check(aRaw.answer) };
     process.stderr.write(
-      `    $${a.costUsd.toFixed(4)}  ${a.tokens} tok  ${a.turns} turns  ${a.correct ? "✓" : "✗ " + a.answer.slice(0, 40)}\n`,
+      `    $${a.costUsd.toFixed(4)}  ${a.tokens} tok  ${a.turns} turns  ${a.correct ? "✓" : `✗ ${a.answer.slice(0, 40)}`}\n`,
     );
 
     process.stderr.write("  Arm B (Aqueduct Tap) …\n");
@@ -122,7 +122,7 @@ async function main(): Promise<void> {
     const b: Run = { ...bRaw, correct: q.check(bRaw.answer) };
     const dataCost = q.rows * UNIT_PRICE;
     process.stderr.write(
-      `    $${b.costUsd.toFixed(4)} agent + $${dataCost.toFixed(4)} data  ${b.tokens} tok  ${b.turns} turns  ${b.correct ? "✓" : "✗ " + b.answer.slice(0, 40)}\n`,
+      `    $${b.costUsd.toFixed(4)} agent + $${dataCost.toFixed(4)} data  ${b.tokens} tok  ${b.turns} turns  ${b.correct ? "✓" : `✗ ${b.answer.slice(0, 40)}`}\n`,
     );
 
     results.push({ id: q.id, a, b, dataCost });
@@ -135,12 +135,12 @@ async function main(): Promise<void> {
     "| question | Arm A $ | A tok | A ok | Arm B agent $ | B data $ | B tok | B ok | A/B cost |",
   );
   console.log("|---|--:|--:|:-:|--:|--:|--:|:-:|--:|");
-  let aTot = 0,
-    bTot = 0,
-    aTok = 0,
-    bTok = 0,
-    aOk = 0,
-    bOk = 0;
+  let aTot = 0;
+  let bTot = 0;
+  let aTok = 0;
+  let bTok = 0;
+  let aOk = 0;
+  let bOk = 0;
   for (const r of results) {
     const bTotal = r.b.costUsd + r.dataCost;
     const ratio = bTotal > 0 ? (r.a.costUsd / bTotal).toFixed(1) : "—";

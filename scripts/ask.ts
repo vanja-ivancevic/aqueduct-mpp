@@ -14,6 +14,7 @@
  * the faucet wait is skipped entirely.
  */
 import { execFile } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { promisify } from "node:util";
 import { serve } from "@hono/node-server";
@@ -37,7 +38,9 @@ const pexec = promisify(execFile);
 const RPC = process.env.AQUEDUCT_RPC_URL ?? DEFAULT_RPC_URL;
 const PORT = 8700;
 const BASE = `http://localhost:${PORT}`;
-const DATASET = resolve("examples/exoplanets.csv");
+// The committed exoplanets Tap sources the LIVE NASA archive (auto-refreshing) — its `source` is the
+// single source of truth, so the demo compiles from it rather than a stale local snapshot.
+const EXO_TAP = resolve("examples/exoplanets.tap.json");
 const getClient = () => createClient({ chain: tempoModerato, transport: http(RPC) });
 
 const bold = (s: string) => `\x1b[1m${s}\x1b[0m`;
@@ -81,25 +84,11 @@ async function ensureFunded(address: `0x${string}`, label: string): Promise<void
 const PLAIN =
   " Respond in clear, professional English. Do not use any persona, slang, roleplay, or abbreviated 'caveman' style.";
 
-const BASELINE_SYSTEM =
-  "You are an AI assistant with NO internet, database, or tool access — only your training knowledge. " +
-  "Answer the user's question with your single best answer, and briefly note how confident you are. " +
-  "Be concise: at most 3 sentences." +
-  PLAIN;
+const BASELINE_SYSTEM = `You are an AI assistant with NO internet, database, or tool access — only your training knowledge. Answer the user's question with your single best answer, and briefly note how confident you are. Be concise: at most 3 sentences.${PLAIN}`;
 
-const QUERY_SYSTEM =
-  "You are a data agent with access to an Aqueduct Tap (a paid, metered dataset). " +
-  "Given the Tap's JSON schema and a user question, output ONLY a JSON query object that answers it, " +
-  "using ONLY declared fields and the operators each field allows. Shape: " +
-  '{"select":[...],"filters":[{"field","op","value"}],"sort":[{"field","dir"}],"limit":N}. ' +
-  "You pay per returned row — keep limit tight. Output the JSON object and nothing else." +
-  PLAIN;
+const QUERY_SYSTEM = `You are a data agent with access to an Aqueduct Tap (a paid, metered dataset). Given the Tap's JSON schema and a user question, output ONLY a JSON query object that answers it, using ONLY declared fields and the operators each field allows. Shape: {"select":[...],"filters":[{"field","op","value"}],"sort":[{"field","dir"}],"limit":N}. You pay per returned row — keep limit tight. Output the JSON object and nothing else.${PLAIN}`;
 
-const ANSWER_SYSTEM =
-  "You are an astronomer. From the provided JSON rows ONLY, present the answer as a compact markdown " +
-  "table (one row per planet, columns matching the data), then add 2-3 brief highlights of the most " +
-  "notable planets. Be concise." +
-  PLAIN;
+const ANSWER_SYSTEM = `You are an astronomer. From the provided JSON rows ONLY, present the answer as a compact markdown table (one row per planet, columns matching the data), then add 2-3 brief highlights of the most notable planets. Be concise.${PLAIN}`;
 
 async function main(): Promise<void> {
   const question =
@@ -132,13 +121,8 @@ async function main(): Promise<void> {
   let httpServer: ReturnType<typeof serve> | undefined;
   try {
     // ── 1. compile + serve the Tap ─────────────────────────────────────────────
-    step(1, "SERVE — compile the exoplanet archive into a Tap and run it");
-    const source: Source = {
-      format: "csv",
-      location: { via: "path", ref: DATASET },
-      authEnv: null,
-      contract: { determinism: "deterministic", freshnessWindow: "24h" },
-    };
+    step(1, "SERVE — compile the (live) exoplanet archive into a Tap and run it");
+    const source: Source = JSON.parse(readFileSync(EXO_TAP, "utf8")).source;
     const built = await deriveConfig(
       { name: "exoplanets", source, recipient: server.address, currency: PATH_USD },
       { engine },
