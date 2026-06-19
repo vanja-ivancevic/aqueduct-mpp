@@ -142,9 +142,13 @@ pinned row-count tripwires hold). A config that fails the gate is never written.
 
 ```bash
 # Serve it. The server re-runs the eval gate before going live.
-export AQUEDUCT_PRIVATE_KEY=0x…   # server wallet — receives settlement
+export AQUEDUCT_PRIVATE_KEY=0x…   # server wallet — MUST be the same address you passed to --recipient
 npx aqueduct-mpp serve cities.tap.json --port 8402
 ```
+
+The serve wallet has to match the config's `recipient`: it's the MPP channel **payee**, and only the
+payee can close a session and settle it. Onboard with `--recipient <serve-wallet-address>` (a cold
+payout address that differs from the serving key will fail at session close).
 
 Endpoints:
 
