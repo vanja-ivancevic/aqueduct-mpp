@@ -12,13 +12,13 @@ JSON file into a *Tap*: a live, metered HTTP feed your app consumes in a few lin
 maintains**. The
 publisher builds the pipeline *once* — fetch, normalize, keep-fresh, serve, meter — and everyone
 downstream just queries it, paying per row over [MPP](https://mpp.dev) (the Machine Payments Protocol)
-on Tempo, settled on-chain.
+on Tempo: peer-to-peer, settled on-chain, non-custodial (Aqueduct never touches the funds).
 
-The alternative is what every team does today: build, host, and *babysit* its own ingestion for the
-same public data — duplicated across every app that needs it, breaking whenever the source moves. A
-Tap collapses that to **build-the-pipeline-once-for-everyone**. App builders embed a data feature
-without owning a pipeline; agents consume the same feed the same way. DuckDB + MPP are the engine; the
-**maintained, uniform feed** is the product.
+Today every team rebuilds, hosts, and *babysits* its own ingestion for the same public data —
+duplicated across every app that needs it, breaking whenever the source moves. A Tap collapses that to
+**build-the-pipeline-once-for-everyone**: app builders embed a data feature without owning a pipeline,
+and agents consume the same feed the same way. DuckDB + MPP are the engine; the **maintained, uniform
+feed** is the product.
 
 ![Aqueduct system architecture — a dataset is compiled (DuckDB profiling → config assembly → eval gate) into a frozen ValidatedConfig that the runtime serves: agents discover and read the schema for free, then pay per row over an MPP session on Tempo, with parameterized DuckDB queries, a query-hash cache, and non-custodial settlement to the publisher's wallet.](./docs/architecture.png)
 
@@ -86,8 +86,8 @@ export AQUEDUCT_PRIVATE_KEY=$(node -e "import('viem/accounts').then(m=>console.l
 npm run faucet                    # funds the address derived from AQUEDUCT_PRIVATE_KEY (idempotent)
 ```
 
-Fund an agent's spending wallet the same way: `AQUEDUCT_AGENT_KEY=0x… npm run faucet`. Actually buying
-rows over MPP needs a wallet-holding client — the MCP server (`aqueduct-mcp`, see
+Fund an agent's spending wallet the same way: `AQUEDUCT_AGENT_KEY=0x… npm run faucet`. Buying rows
+over MPP needs a wallet-holding client — the MCP server (`aqueduct-mcp`, see
 [docs/mcp.md](./docs/mcp.md)) or the `aqueduct` skill; a raw `curl` to a paid `/query` returns `402`.
 
 ## Why a Tap, not your own pipeline?
