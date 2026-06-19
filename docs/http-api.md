@@ -23,19 +23,19 @@ no side effects.
 
 ```json
 {
-  "name": "exoplanets",
+  "name": "doaj-journals",
   "schema": [
-    { "name": "name",         "type": "string",  "required": false },
-    { "name": "distance_pc",  "type": "number",  "required": false },
-    { "name": "radius_earth", "type": "number",  "required": false }
+    { "name": "title",     "type": "string",  "required": false },
+    { "name": "publisher", "type": "string",  "required": false },
+    { "name": "has_apc",   "type": "boolean", "required": false }
   ],
   "query": {
     "filters": [
-      { "field": "distance_pc",  "ops": ["eq", "ne", "lt", "lte", "gt", "gte", "in"] },
-      { "field": "method",       "ops": ["eq", "ne", "in", "like"] }
+      { "field": "has_apc",           "ops": ["eq", "ne"] },
+      { "field": "publisher_country", "ops": ["eq", "ne", "in", "like"] }
     ],
     "selectable": "*",
-    "sortable": ["distance_pc", "radius_earth"],
+    "sortable": ["article_records", "weeks_to_publication"],
     "maxLimit": 1000,
     "defaultLimit": 100
   },
@@ -89,7 +89,7 @@ await session.close();                                  // settle the cumulative
 ### Response `200 application/json`
 
 ```json
-{ "rows": [ { "name": "Kepler-22 b", "distance_pc": 190.0 } ], "count": 1, "amount": "0.0001", "cached": false }
+{ "rows": [ { "title": "PLOS ONE", "publisher": "Public Library of Science", "has_apc": true } ], "count": 1, "amount": "0.0001", "cached": false }
 ```
 
 | Field | Meaning |
@@ -118,7 +118,7 @@ a repeated zero-row query can't force an unpaid DuckDB count each time.)
 | `502` | the query was valid but the source engine could not evaluate it | `{ error: "…" }` |
 
 `400` is returned **before** any charge — an invalid request never costs money. The planner reports
-located issues (e.g. `field 'foo' is not filterable`, `op 'like' not allowed on 'distance_pc'`) so the
+located issues (e.g. `field 'foo' is not filterable`, `op 'like' not allowed on 'has_apc'`) so the
 agent can fix and retry. Pricing is computed from a pre-charge `COUNT`; the full `SELECT` runs only
 after payment clears.
 

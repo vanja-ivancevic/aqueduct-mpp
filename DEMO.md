@@ -22,6 +22,11 @@ transcripts to `recordings/with-aqueduct.log` and `recordings/on-its-own.log`.
 config), and the `claude` CLI on PATH. Optional: set `AQUEDUCT_AGENT_KEY` to a funded key to skip the
 faucet. A build (`npm run build`) makes the MCP server available at `dist/mcp.js`.
 
+**For a live demo:** `npm run demo:tap` (alias for `npm run demo -- --no-solo`) runs **only** the
+WITH-Aqueduct agent and skips the solo agent — the solo run can take ~15+ minutes fighting the
+Cloudflare wall, which is too long on stage. You get the onboard → serve → query → paid-settlement
+story in under a minute. Run the full two-agent comparison off-stage (or show the recorded video).
+
 ## What the audience sees
 
 The task is a real researcher's question — *shortlist diamond-OA (no-APC) Medicine journals, license

@@ -207,7 +207,7 @@ async function cmdDeploy(args: string[]): Promise<number> {
   const image = flags.get("image");
   if (!provider || !image) {
     console.error(
-      "usage: aqueduct deploy --target local|akash --image <ref> [--port 8402] [--dataset examples/exoplanets.csv] [--out file]",
+      "usage: aqueduct deploy --target local|akash --image <ref> [--port 8402] [--dataset examples/doaj-journals.csv] [--out file]",
     );
     return 1;
   }

@@ -18,7 +18,7 @@ A Tap is published by adding a `Service` entry to MPP's registry. `aqueduct regi
 entry from the frozen config + the URL you deployed at:
 
 ```bash
-aqueduct register exoplanets.tap.json --url https://your-tap-host \
+aqueduct register doaj-journals.tap.json --url https://your-tap-host \
   --provider-name "Acme Data" --provider-url https://acme.example
 ```
 
@@ -58,7 +58,8 @@ AQUEDUCT_AGENT_KEY=0x… npx tsx skills/aqueduct/query.ts <tapUrl> '{"filters":[
 
 ### Via the MCP server
 
-`npx aqueduct-mcp` runs an MCP **stdio** server exposing the same ops as tools — `aqueduct_discover`,
+The `aqueduct-mcp` server (run `npm run aqueduct-mcp` from a checkout, or the `aqueduct-mcp` bin after
+`npm link`) is an MCP **stdio** server exposing the same ops as tools — `aqueduct_discover`,
 `aqueduct_schema`, `aqueduct_query` — for any MCP-native host (Claude Desktop, Cursor, …). Run it
 locally with your own wallet:
 

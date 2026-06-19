@@ -12,9 +12,8 @@ non-custodial. It runs no LLM and holds no funds. It lives outside `core/`.
 ## Run it
 
 ```bash
-npx aqueduct-mcp          # published / built bin
-# or, from a checkout:
-npm run aqueduct-mcp      # tsx mcp/server.ts
+npm run aqueduct-mcp      # from a checkout (tsx mcp/server.ts)
+# after `npm link` (or once published to npm): the `aqueduct-mcp` bin, or `npx aqueduct-mcp`
 ```
 
 It speaks MCP over **stdio** — an MCP client launches it as a subprocess; you don't run it standalone.

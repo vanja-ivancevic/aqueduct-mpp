@@ -37,7 +37,7 @@ export interface ComputeProvider {
 
 export const DEFAULT_SPEC: Omit<DeploySpec, "image"> = {
   port: 8402,
-  dataset: "examples/exoplanets.csv",
+  dataset: "examples/doaj-journals.csv",
   cpu: 0.5,
   memory: "512Mi",
   storage: "1Gi",

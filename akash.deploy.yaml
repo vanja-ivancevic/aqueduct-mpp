@@ -6,7 +6,7 @@ services:
     image: ghcr.io/you/aqueduct:1.0.0
     env:
       - PORT=8402
-      - AQUEDUCT_DATASET=examples/exoplanets.csv
+      - AQUEDUCT_DATASET=examples/doaj-journals.csv
       - AQUEDUCT_PRIVATE_KEY=CHANGE_ME            # server wallet (receives settlement)
       - AQUEDUCT_RECIPIENT=CHANGE_ME              # payout address (usually the server wallet's)
       - AQUEDUCT_SECRET=CHANGE_ME                 # openssl rand -hex 32

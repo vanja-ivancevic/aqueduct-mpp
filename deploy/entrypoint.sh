@@ -3,7 +3,7 @@
 # Identical behavior locally and on Akash — the only inputs are env vars.
 set -e
 
-: "${AQUEDUCT_DATASET:=examples/exoplanets.csv}"
+: "${AQUEDUCT_DATASET:=examples/doaj-journals.csv}"
 : "${AQUEDUCT_RECIPIENT:?set AQUEDUCT_RECIPIENT (payout address)}"
 : "${AQUEDUCT_PRIVATE_KEY:?set AQUEDUCT_PRIVATE_KEY (server wallet)}"
 

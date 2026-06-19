@@ -17,12 +17,12 @@ empty request means "all selectable columns, no filters, `defaultLimit` rows".
 
 ```jsonc
 {
-  "select":  ["name", "distance_pc"],     // columns to return; omit → all selectable columns
+  "select":  ["title", "weeks_to_publication"], // columns to return; omit → all selectable columns
   "filters": [                            // ALL must hold (AND); each: { field, op, value }
-    { "field": "distance_pc", "op": "lt", "value": 100 },
-    { "field": "method",      "op": "eq", "value": "Transit" }
+    { "field": "weeks_to_publication", "op": "lt", "value": 12 },
+    { "field": "has_apc",              "op": "eq", "value": false }
   ],
-  "sort":    [ { "field": "distance_pc", "dir": "asc" } ],  // dir defaults to "asc"
+  "sort":    [ { "field": "weeks_to_publication", "dir": "asc" } ],  // dir defaults to "asc"
   "limit":   50,                          // clamped to maxLimit
   "offset":  0                            // pagination
 }
@@ -71,16 +71,16 @@ These bound the work an *unpaid* request can force, independent of the config:
 
 A request exceeding a structural cap fails parse (`400`); the rest are enforced during planning.
 
-## Example: 15 closest Earth-sized planets
+## Example: 15 most prolific no-APC journals with fast review
 
 ```jsonc
 {
-  "select":  ["name", "distance_pc", "radius_earth"],
+  "select":  ["title", "publisher", "article_records"],
   "filters": [
-    { "field": "radius_earth", "op": "gte", "value": 0.8 },
-    { "field": "radius_earth", "op": "lte", "value": 1.5 }
+    { "field": "has_apc",              "op": "eq",  "value": false },
+    { "field": "weeks_to_publication", "op": "lte", "value": 12 }
   ],
-  "sort":   [ { "field": "distance_pc", "dir": "asc" } ],
+  "sort":   [ { "field": "article_records", "dir": "desc" } ],
   "limit":  15
 }
 ```

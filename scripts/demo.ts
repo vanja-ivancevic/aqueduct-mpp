@@ -364,8 +364,17 @@ function panels(left: string[], right: string[]): void {
     console.log(`  ${pad(left[i] ?? "")}  ${pad(right[i] ?? "")}`);
 }
 
+// `--no-solo` runs only the WITH-Aqueduct agent (skips the slow ~17-min solo agent) — for a live demo.
+const SKIP_SOLO = process.argv.includes("--no-solo");
+
 async function main(): Promise<void> {
-  console.log(bold("\n  AQUEDUCT — onboard a CSV → serve a metered Tap → race two agents on it\n"));
+  console.log(
+    bold(
+      SKIP_SOLO
+        ? "\n  AQUEDUCT — onboard a CSV → serve a metered Tap → an agent queries it, paying per row\n"
+        : "\n  AQUEDUCT — onboard a CSV → serve a metered Tap → race two agents on it\n",
+    ),
+  );
 
   const serverPk = generatePrivateKey();
   const server = privateKeyToAccount(serverPk);
@@ -470,36 +479,43 @@ async function main(): Promise<void> {
     mcpConfig,
   );
 
-  rule("AGENT 2 — SOLO  (claude opus 4.8, no Aqueduct — must fetch DOAJ itself)");
-  const onOwn = await runClaude(
-    ON_ITS_OWN,
-    ["Bash", "WebFetch", "WebSearch", "Read", "Write"],
-    ownDir,
-    "recordings/on-its-own",
-    "THE AGENT ON ITS OWN",
-    undefined, // no MCP — it has to fend for itself
-    true, // sandbox to a deployed-agent box: no desktop browser to borrow for the Cloudflare wall
-  );
+  let onOwn: Run | undefined;
+  if (!SKIP_SOLO) {
+    rule("AGENT 2 — SOLO  (claude opus 4.8, no Aqueduct — must fetch DOAJ itself)");
+    onOwn = await runClaude(
+      ON_ITS_OWN,
+      ["Bash", "WebFetch", "WebSearch", "Read", "Write"],
+      ownDir,
+      "recordings/on-its-own",
+      "THE AGENT ON ITS OWN",
+      undefined, // no MCP — it has to fend for itself
+      true, // sandbox to a deployed-agent box: no desktop browser to borrow for the Cloudflare wall
+    );
+  }
 
   const spent = Number(before - (await balanceStable(agent.address))) / 1e6;
   const spentOk = spent > 0 && spent < Number(before) / 1e6;
-  const ownGotData =
-    !/403|just a moment|cloudflare|blocked|unable|could ?n.t|no access|forbidden/i.test(
-      onOwn.answer,
-    );
+  const paidLine =
+    spentOk
+      ? `\n  ${dim("the Aqueduct agent paid for exactly the rows it used, over MPP:")} ${bold(`${spent.toFixed(4)} pathUSD`)} ${dim("from its own wallet (data + gas)")}`
+      : `\n  ${dim("the Aqueduct agent paid per row over MPP, settled on-chain to the publisher's wallet")}`;
+  const withAqPanel = [
+    bold(cyan("◀ WITH AQUEDUCT")),
+    dim("queries a paid Tap for the corpus"),
+    "",
+    `answer:  ${topJournal(withAq.answer)}`,
+    `time:    ${(withAq.durationMs / 1000).toFixed(1)} s`,
+    `agent $: $${withAq.costUsd.toFixed(4)}  (${withAq.turns} turns)`,
+    "data: one metered MPP query",
+  ];
 
   rule("RESULT");
-  panels(
-    [
-      bold(cyan("◀ WITH AQUEDUCT")),
-      dim("queries a paid Tap for the corpus"),
-      "",
-      `answer:  ${topJournal(withAq.answer)}`,
-      `time:    ${(withAq.durationMs / 1000).toFixed(1)} s`,
-      `agent $: $${withAq.costUsd.toFixed(4)}  (${withAq.turns} turns)`,
-      "data: one metered MPP query",
-    ],
-    [
+  if (onOwn) {
+    const ownGotData =
+      !/403|just a moment|cloudflare|blocked|unable|could ?n.t|no access|forbidden/i.test(
+        onOwn.answer,
+      );
+    panels(withAqPanel, [
       bold(yellow("THE AGENT ON ITS OWN ▶")),
       dim("must fetch DOAJ itself — past the wall"),
       "",
@@ -507,24 +523,34 @@ async function main(): Promise<void> {
       `time:    ${(onOwn.durationMs / 1000).toFixed(1)} s`,
       `agent $: $${onOwn.costUsd.toFixed(4)}  (${onOwn.turns} turns)`,
       ownGotData ? "data: fetched from DOAJ" : "data: blocked at DOAJ (403)",
-    ],
-  );
-  console.log(
-    spentOk
-      ? `\n  ${dim("the Aqueduct agent paid for exactly the rows it used, over MPP:")} ${bold(`${spent.toFixed(4)} pathUSD`)} ${dim("from its own wallet (data + gas)")}`
-      : `\n  ${dim("the Aqueduct agent paid per row over MPP, settled on-chain to the publisher's wallet")}`,
-  );
-  console.log(
-    green(
-      bold(
-        "\n  ✓ One run: a CSV became a metered Tap, then the same agent — with vs without it — split on a\n" +
-          "    walled corpus. The Tap agent paid per row and answered; the lone agent hit the 403 and couldn't.\n",
+    ]);
+    console.log(paidLine);
+    console.log(
+      green(
+        bold(
+          "\n  ✓ One run: a CSV became a metered Tap, then the same agent — with vs without it — split on a\n" +
+            "    walled corpus. The Tap agent paid per row and answered; the lone agent hit the 403 and couldn't.\n",
+        ),
       ),
-    ),
-  );
-  console.log(
-    `  ${dim("full tool-by-tool transcripts (open side by side):")} ${bold("recordings/with-aqueduct.log")} ${dim("·")} ${bold("recordings/on-its-own.log")}`,
-  );
+    );
+    console.log(
+      `  ${dim("full tool-by-tool transcripts (open side by side):")} ${bold("recordings/with-aqueduct.log")} ${dim("·")} ${bold("recordings/on-its-own.log")}`,
+    );
+  } else {
+    panels(withAqPanel, []);
+    console.log(paidLine);
+    console.log(
+      green(
+        bold(
+          "\n  ✓ A CSV became a metered Tap; the agent read its schema, paid per row over MPP, and answered\n" +
+            "    from the corpus — no scraping, no pipeline, settlement on-chain to the publisher's wallet.\n",
+        ),
+      ),
+    );
+    console.log(
+      `  ${dim("full tool-by-tool transcript:")} ${bold("recordings/with-aqueduct.log")}`,
+    );
+  }
 
   tap.close();
   engine.close();

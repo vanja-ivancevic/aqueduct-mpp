@@ -29,7 +29,7 @@ Returns `[{ id, name, url, description, price, currency }]` — Aqueduct Taps on
 run the flow below against it.
 
 > Prefer MCP? The same three ops (discover / schema / query) are also exposed as an MCP server —
-> `npx aqueduct-mcp` over stdio. See [docs/mcp.md](../../docs/mcp.md).
+> the `aqueduct-mcp` binary over stdio. See [docs/mcp.md](../../docs/mcp.md).
 
 ## The flow (always in this order)
 
@@ -82,5 +82,5 @@ run the flow below against it.
 ## Not in scope (yet)
 
 For the targeted reads this skill is for, a query returns its (limit-bounded) rows as one JSON body,
-which is the right shape. Streaming/SSE for bulk pulls is experimental and undocumented. Live APIs and
-SQL/scraped sources are roadmap; Taps today are static parquet/CSV/JSON.
+which is the right shape. Streaming/SSE for bulk pulls, live APIs, and SQL/scraped sources are on the
+roadmap; Taps today are static parquet/CSV/JSON.

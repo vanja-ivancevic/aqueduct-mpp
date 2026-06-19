@@ -22,7 +22,7 @@ makes "serve an un-evaluated config" unrepresentable — `createTapServer` accep
 ```jsonc
 {
   "version": 1,
-  "name": "exoplanets",            // kebab-case identifier, ^[a-z][a-z0-9-]*$
+  "name": "doaj-journals",         // kebab-case identifier, ^[a-z][a-z0-9-]*$
   "source":  { … },                // where the file is + its source contract
   "schema":  [ … ],                // the output columns
   "query":   { … },                // the constrained query interface
@@ -45,7 +45,7 @@ Where the data lives and the contract under which it's served.
 ```jsonc
 "source": {
   "format": "csv",                 // "parquet" | "csv" | "json"
-  "location": { "via": "path", "ref": "examples/exoplanets.csv" },
+  "location": { "via": "path", "ref": "examples/doaj-journals.csv" },
   "authEnv": null,                 // env var name for an upstream credential, or null
   "contract": {
     "determinism": "deterministic", // "deterministic" | "volatile" | "personalized"
@@ -67,7 +67,7 @@ Where the data lives and the contract under which it's served.
 The output columns. At least one. Each field:
 
 ```jsonc
-{ "name": "distance_pc", "type": "number", "required": true }
+{ "name": "weeks_to_publication", "type": "integer", "required": true }
 ```
 
 ### Field types
@@ -92,9 +92,9 @@ The **constrained query interface** — full reference in [query.md](./query.md)
 
 ```jsonc
 "query": {
-  "filters": [ { "field": "distance_pc", "ops": ["lt", "lte", "gt", "gte"] } ],
+  "filters": [ { "field": "weeks_to_publication", "ops": ["lt", "lte", "gt", "gte"] } ],
   "selectable": "*",               // "*" = all schema fields, or an explicit allow-list
-  "sortable": ["distance_pc"],
+  "sortable": ["weeks_to_publication"],
   "maxLimit": 1000,                // hard ceiling on rows per request
   "defaultLimit": 100              // applied when the agent omits `limit`; must be <= maxLimit
 }
@@ -153,9 +153,9 @@ trusted blindly). Produces the published correctness score.
 ```jsonc
 "evals": {
   "golden": [                      // pinned request → expected row count (a deterministic tripwire)
-    { "request": { "filters": [{ "field": "method", "op": "eq", "value": "Transit" }] }, "expectRowCount": 1100 }
+    { "request": { "filters": [{ "field": "has_apc", "op": "eq", "value": false }] }, "expectRowCount": 12106 }
   ],
-  "invariants": ["distance_pc >= 0"], // SQL booleans that must hold for EVERY row (frozen, trusted)
+  "invariants": ["weeks_to_publication >= 0"], // SQL booleans that must hold for EVERY row (frozen, trusted)
   "sampleSize": 20                 // rows sampled for the schema-conformance check
 }
 ```
