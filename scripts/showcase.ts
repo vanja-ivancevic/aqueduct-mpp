@@ -185,8 +185,8 @@ async function main(): Promise<void> {
   console.log(
     green(
       bold(
-        `\n  ✓ Any dataset → one command → an agent-payable Tap. Any agent → one skill → buys from any Tap.\n` +
-          `    DuckDB + MPP are the engine; the standard interface is the product. (Stripe for data → agents.)\n`,
+        "\n  ✓ Any dataset → one command → an agent-payable Tap. Any agent → one skill → buys from any Tap.\n" +
+          "    DuckDB + MPP are the engine; the standard interface is the product. (Stripe for data → agents.)\n",
       ),
     ),
   );
