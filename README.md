@@ -1,7 +1,7 @@
 # Aqueduct
 
 [![npm](https://img.shields.io/npm/v/aqueduct-mpp)](https://www.npmjs.com/package/aqueduct-mpp)
-[![license](https://img.shields.io/npm/l/aqueduct-mpp)](./LICENSE)
+[![license](https://img.shields.io/github/license/vanja-ivancevic/aqueduct-mpp)](./LICENSE)
 
 **A maintained data dependency for your app — or your agent.** One command turns any dataset into a
 *Tap*: a live, metered HTTP feed your app consumes in a few lines and **never maintains**. The
