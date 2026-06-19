@@ -376,6 +376,8 @@ async function main(): Promise<void> {
     ),
   );
 
+  mkdirSync("recordings", { recursive: true }); // per-agent transcripts land here
+
   const serverPk = generatePrivateKey();
   const server = privateKeyToAccount(serverPk);
   const agentPk = (process.env.AQUEDUCT_AGENT_KEY as `0x${string}`) ?? generatePrivateKey();

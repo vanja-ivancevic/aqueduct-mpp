@@ -52,7 +52,6 @@
     "demo:tap": "tsx scripts/demo.ts --no-solo",
     "faucet": "tsx scripts/faucet.ts",
     "demo:refresh": "tsx scripts/refresh-doaj.ts",
-    "demo:replay": "tsx scripts/replay.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",

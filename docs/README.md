@@ -15,7 +15,6 @@ reference behind it.
 | [discovery.md](./discovery.md) | Finding & consuming Taps — `register`, the skill, the MCP server (no directory of our own) |
 | [mcp.md](./mcp.md) | The MCP server — discover/schema/query tools for any MCP agent over stdio |
 | [../DEPLOY.md](../DEPLOY.md) | Ship a Tap as a container — local docker-compose ↔ Akash |
-| [../DEMO.md](../DEMO.md) | The demo — same agent with vs without a Tap, on DOAJ's AI-walled journal corpus |
 
 ## The model in one paragraph
 

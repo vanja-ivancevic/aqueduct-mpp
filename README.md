@@ -59,11 +59,6 @@ fabricate a ranking it couldn't verify. The Aqueduct agent paid a fraction of a 
 (0.0114 pathUSD) and answered correctly, while DOAJ's origin was never touched. Nothing is staged (each
 agent runs in an isolated dir so neither can read the repo's local copy); re-run it with `npm run demo`.
 
-**Record it.** `npm run demo:replay` plays the run back as a beat-by-beat "movie" you advance with the
-spacebar (or `--auto`), so the on-screen action tracks your narration. The builder side is
-`scripts/refresh-doaj.ts`: a manually downloaded DOAJ CSV → one command → a metered Tap (22,940
-journals, eval-gated, no LLM).
-
 An agent reaches a Tap two ways: the **`aqueduct` skill** (`skills/aqueduct/`) or the **MCP server**
 (the `aqueduct-mcp` binary, see [docs/mcp.md](./docs/mcp.md)) — discover Taps, read a schema for free,
 then pay per row. The LLM is always the *client*; it never sits in the serving path.
@@ -261,7 +256,7 @@ Reference docs live in [`docs/`](./docs/README.md):
 - [Discovery & consumption](./docs/discovery.md) — find/buy Taps via MPP's registry, the skill, the MCP server
 - [MCP server](./docs/mcp.md) — expose discover/schema/query to any MCP agent over stdio (`aqueduct-mcp`)
 - [How it works](./docs/how-it-works.html) — a plain-language visual walkthrough of the two processes (open in a browser)
-- [Deploy](./DEPLOY.md) — ship a Tap local ↔ Akash · [Demo](./DEMO.md) — same agent with vs without a Tap (DOAJ)
+- [Deploy](./DEPLOY.md) — ship a Tap local ↔ Akash
 
 ## Links
 
