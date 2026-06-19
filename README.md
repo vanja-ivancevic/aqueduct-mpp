@@ -1,9 +1,11 @@
 # Aqueduct
 
-**Compile any dataset into a Tap: a metered, agent-payable data feed.** Point Aqueduct at a
-parquet / CSV / JSON file and it produces a *Tap* — an HTTP service where AI agents pay per row over
-[MPP](https://mpp.dev) (the Machine Payments Protocol) on Tempo, via off-chain session vouchers
-settled on-chain.
+**Stripe for data → agents.** One command turns any dataset into a metered, agent-payable, discoverable
+API; one skill lets any agent buy from any Tap. Point Aqueduct at a parquet / CSV / JSON file and it
+produces a *Tap* — an HTTP service where AI agents pay per row over [MPP](https://mpp.dev) (the Machine
+Payments Protocol) on Tempo, via off-chain session vouchers settled on-chain. DuckDB + MPP are the
+engine; the **uniform interface** — publish with one command, consume any Tap with one skill — is the
+product. (Honest scope + where the value really is: [`knowledge/18`](./knowledge/18-market-precedent.md).)
 
 ```
 npx aqueduct-mpp onboard data.parquet --recipient 0xYourPayout   # → data.tap.json
@@ -27,6 +29,20 @@ asciinema play docs/aqueduct-ask.cast      # or: asciinema upload docs/aqueduct-
 Reproduce it live (Tempo testnet): `npx tsx scripts/ask.ts "your question"`. The agent uses the
 **`aqueduct` skill** (`skills/aqueduct/`) — a `SKILL.md` plus a paid-query tool — so any Claude Code
 agent can discover, query, and pay a Tap. The LLM is the *client*; it never sits in the serving path.
+
+**The whole pitch in one run** — `npx tsx scripts/showcase.ts` brings up **three heterogeneous Taps**
+(space science · geophysics · forex) and has one agent buy from all three with the *same* `buyRows()`
+call — **zero bespoke integration per source**, three real on-chain settlements:
+
+```
+✓ closest Earth-sized exoplanet: Proxima Cen b (1.30 pc)   — settled 0x9eb6…
+✓ strongest quake (24h):         M5.3 Izu Islands, Japan    — settled 0xbd9c…
+✓ today's USD→JPY rate:          160.93                     — settled 0xb061…
+  3 Taps · 0 integrations · 0.0003 pathUSD · 3 settlements on Tempo
+```
+
+That uniformity is the product: any dataset → one command → an agent-payable Tap; any agent → one skill
+→ buys from any Tap.
 
 ## Example Taps & the comparison
 

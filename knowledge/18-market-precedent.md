@@ -85,10 +85,42 @@ This is precisely Aqueduct/MPP's model — per-query, keyless, wallet-settled �
 
 ## Positioning (the one-liner)
 
-> **Aqueduct is Alchemy / SerpAPI for the long tail of public data — agent-native.**
->
-> Nobody should build and babysit a USGS or NASA scraper for production any more than they'd run their
-> own Ethereum node. We maintain the access layer; agents pay per query over MPP.
+> **Aqueduct is Stripe for data → agents.** One command turns any dataset into an agent-payable,
+> discoverable API; one skill lets any agent buy from any Tap. DuckDB + MPP are the engine; the
+> **standard interface** is the product.
+
+## Honest defensibility (where the value really is — and isn't)
+
+A clear-eyed reading, because the core *is* thin:
+
+- **What's actually here:** an LLM **compiler** (any messy file → typed, validated, eval-passed config),
+  a thin **runtime** (DuckDB serves the file · a constrained query interface prevents raw SQL · MPP
+  meters + settles), and a **standard** (uniform discovery + query so one skill/MCP consumes any Tap).
+  The runtime is glue; the compiler and the standard are the differentiated parts, and neither is deep.
+
+- **The honest critique (own it):** a *sophisticated data vendor* who already runs the hard pipeline +
+  an API will **not** use Aqueduct — they `npm install mppx`, add it to their existing API, and we're
+  redundant. The more capable the builder, the less we add. If the hard part is the pipeline and the
+  builder owns the pipeline, we only own the easy part.
+
+- **So who is it for?** Not SerpAPI/Bloomberg (they have their own everything). Two segments:
+  1. **The long-tail data owner who is *not* a data company** — has a useful CSV/parquet, will never
+     hand-build a query API + payment integration + rate limiting + discovery. For them Aqueduct is the
+     *whole stack*, in one command.
+  2. **The agent (demand side)** — if every builder rolls a bespoke API, agents face N interfaces.
+     Aqueduct standardizes query + discovery so one skill buys from any Tap. Value accrues to the
+     consumer, as a network.
+
+- **The precedent for "thin wrapper, huge product":** Stripe is "just an API over Visa." Vercel is "just
+  a wrapper over AWS." Shopify, Twilio, MCP — all thin over something that existed. The wrapper *is* the
+  product because the value is **DX + standardization + network**, not the underlying tech. "A builder
+  could integrate Visa/MPP directly" is true and irrelevant; almost nobody does.
+
+- **The caveat we hold:** defensibility is therefore **adoption / network, not technology.** The tech is
+  replicable in a weekend. If Aqueduct wins it's because it became *the* standard way to publish and
+  consume agent-payable data — the way MCP won, not the way an algorithm wins. For a hackathon you can
+  demonstrate the DX + the standard working end-to-end (`scripts/showcase.ts`); you cannot *prove* a
+  network effect. That's the honest bet.
 
 ## Honest caveats (don't oversell)
 
