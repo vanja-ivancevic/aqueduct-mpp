@@ -32,3 +32,14 @@ recordings/*.jsonl
 
 # Archived research + retired demos/scripts (kept locally, out of the published repo)
 /archive/
+
+# Personal demo recording + its narration assets (the screen capture, audio, and subtitles I
+# produce for the video — not product code, and large). Regenerate locally.
+*.m4a
+*.mov
+*.mp4
+*.srt
+*.ass
+
+# Internal session/handoff notes — working docs, not for the public repo
+handoff.md

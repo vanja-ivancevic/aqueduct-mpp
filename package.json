@@ -49,6 +49,7 @@
     "aqueduct": "tsx cli/index.ts",
     "aqueduct-mcp": "tsx mcp/server.ts",
     "demo": "tsx scripts/demo.ts",
+    "faucet": "tsx scripts/faucet.ts",
     "demo:refresh": "tsx scripts/refresh-doaj.ts",
     "demo:replay": "tsx scripts/replay.ts",
     "test": "vitest run",

@@ -18,10 +18,10 @@
  * Full tool-by-tool transcripts (thinking 🧠 · text 💬 · tools 🔧 · results ↳) are written to
  * recordings/with-aqueduct.log and recordings/on-its-own.log for reading side by side.
  */
-import { spawn } from "node:child_process";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { type ChildProcess, spawn } from "node:child_process";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { basename, extname, join, resolve } from "node:path";
 import { createInterface } from "node:readline";
 import { serve } from "@hono/node-server";
 import { http, createClient } from "viem";
@@ -57,9 +57,50 @@ const TASK =
   "first) and report the top 5 as 'title — country — weeks'. Reply on one final line: " +
   "'Top journal: <title>'.";
 
-const WITH_AQUEDUCT = `You have Aqueduct MCP tools (aqueduct_schema, aqueduct_query) for using metered, agent-payable data feeds called Taps. A live Tap over the DOAJ open-access journal corpus (~23,000 journals) is at ${TAP_URL}. Read its schema, then issue a constrained query for the rows you need — you pay a tiny amount per row from your wallet, so filter hard and select only the columns you need. Use it as your data source.\n\n${TASK}`;
+// Both agents get the identical TASK. The only difference: the Aqueduct agent is told it has the
+// `aqueduct` skill and where the Tap is. No handicaps on either side — same question, same effort.
+const WITH_AQUEDUCT = `Use your \`aqueduct\` skill to get the data you need. A live Aqueduct Tap over the DOAJ open-access journal corpus (~23,000 journals) is at ${TAP_URL}. Follow the skill: read the Tap's schema, then query for exactly the rows you need.\n\n${TASK}`;
 
-const ON_ITS_OWN = `Obtain the data from the DOAJ (Directory of Open Access Journals) yourself — its public CSV export and/or its REST API — using the web and shell tools available to you. Do not give up after the first obstacle, but do not spend more than a few attempts.\n\n${TASK}`;
+const ON_ITS_OWN = TASK;
+
+// The single `aqueduct` skill the WITH-Aqueduct agent is given (planted as a project skill in its
+// isolated cwd). Same discipline as skills/aqueduct/SKILL.md, but pointed at the MCP tools the agent
+// actually holds (aqueduct_schema / aqueduct_query) — the isolated cwd has no repo to run query.ts.
+const AQUEDUCT_SKILL = `---
+name: aqueduct
+description: Buy specific rows from a metered, agent-payable data feed (an "Aqueduct Tap") over MPP on Tempo. Use when you need precise data from a large external dataset — query by declared filters/columns and pay per row, instead of downloading the whole database.
+---
+
+# aqueduct
+
+An **Aqueduct Tap** is a large dataset served as a metered HTTP API. You ask for exactly the rows you
+need with a structured query and pay **per row** over an MPP session on Tempo — you never download the
+whole database, and the operator never holds your funds. You reach a Tap through two MCP tools you
+already have: \`aqueduct_schema\` and \`aqueduct_query\`. The Tap URL is given to you in the task.
+
+## The flow (always in this order)
+
+1. **Read the terms — free.** Call \`aqueduct_schema\` with the Tap URL. It signs and costs nothing and
+   returns \`{ name, schema, query, pricing }\`. \`query\` is the **only** surface you may use:
+   - \`filters\`: \`[{ field, ops }]\` — each filterable field + the operators allowed on it
+     (\`eq ne lt lte gt gte in like\`).
+   - \`selectable\`: columns you may request (or \`"*"\`). \`sortable\`: columns you may sort by.
+   - \`maxLimit\` / \`defaultLimit\`: row caps. \`pricing\`: the per-row price.
+
+2. **Buy the rows — paid.** Call \`aqueduct_query\` with the Tap URL and a request built **only** from
+   declared fields/ops (an undeclared field or operator is rejected as a 400 before you pay):
+   \`{ select: ["name","population"], filters: [{ field:"country", op:"eq", value:"JP" }],
+      sort: [{ field:"population", dir:"desc" }], limit: 5 }\`
+   It opens an MPP session, pays \`returned × unitPrice\` from your wallet, and settles on close.
+
+## Rules of thumb
+
+- **Schema before query.** Never guess columns/filters — read \`aqueduct_schema\` first.
+- **You pay for what's returned.** Filter hard, select only the columns you need, keep \`limit\` tight.
+  A query matching **0 rows is free** — refine with a cheap exploratory query before a larger pull.
+- **One \`aqueduct_query\` call = one targeted query + one on-chain settlement.** Batch your need into
+  one good query rather than many.
+`;
 
 type Run = { costUsd: number; durationMs: number; turns: number; answer: string };
 type Ev = Record<string, unknown>;
@@ -73,6 +114,18 @@ type Content = {
 };
 
 const oneLine = (s: string, n = 160) => s.replace(/\s+/g, " ").trim().slice(0, n);
+
+/** Ask one line on the terminal; empty answer (or no TTY) falls back to the prefilled default. */
+function ask(question: string, fallback: string): Promise<string> {
+  if (!process.stdin.isTTY) return Promise.resolve(fallback);
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  return new Promise((res) =>
+    rl.question(`  ${question} ${dim(`[${fallback}]`)} `, (a) => {
+      rl.close();
+      res(a.trim() || fallback);
+    }),
+  );
+}
 
 const resultText = (c: Content): string =>
   Array.isArray(c.content)
@@ -131,6 +184,33 @@ function renderTranscript(title: string, prompt: string, events: Ev[]): string {
   return `${lines.join("\n")}\n`;
 }
 
+// Every spawned agent is registered here so quitting the demo tears down the whole claude process tree
+// instead of orphaning long-running children (headless Chromium, python pulls, the MCP server subprocess).
+const liveAgents = new Set<ChildProcess>();
+function killAgents(signal: NodeJS.Signals = "SIGKILL"): void {
+  for (const child of liveAgents) {
+    if (child.pid) {
+      try {
+        process.kill(-child.pid, signal); // negative pid → the child's entire process group
+      } catch {}
+    }
+    try {
+      child.kill(signal);
+    } catch {}
+  }
+  liveAgents.clear();
+}
+let quitting = false;
+for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
+  process.on(sig, () => {
+    if (quitting) return;
+    quitting = true;
+    killAgents();
+    process.exit(130);
+  });
+}
+process.on("exit", () => killAgents());
+
 async function runClaude(
   prompt: string,
   tools: string[],
@@ -138,7 +218,19 @@ async function runClaude(
   logBase: string,
   title: string,
   mcpConfig?: string,
+  sandbox = false,
 ): Promise<Run> {
+  // Show the exact prompt this agent is handed, so a viewer sees what each side was actually asked.
+  console.log(dim(`┌─ prompt sent to the agent ${"─".repeat(50)}`));
+  for (const line of prompt.split("\n")) console.log(dim(`│ ${line}`));
+  console.log(`${dim(`└${"─".repeat(76)}`)}\n`);
+  if (sandbox)
+    console.log(
+      dim(
+        "  agent sandbox: no desktop browser, headless tools only — a deployed agent can't borrow your logged-in Chrome to clear a bot wall\n",
+      ),
+    );
+
   const args = [
     "-p",
     prompt,
@@ -147,14 +239,43 @@ async function runClaude(
     "--verbose",
     "--model",
     "claude-opus-4-8",
+    "--effort",
+    "high",
     "--dangerously-skip-permissions",
+    // Run each agent with ONLY project-level settings/skills (drop the operator's personal
+    // ~/.claude skills + plugins). The fresh `cwd` has no project skills unless we plant one, so
+    // the solo agent sees default built-ins only, and the Aqueduct agent sees default + the one
+    // `aqueduct` skill we inject into its cwd. Keeps the race fair and reproducible across machines.
+    "--setting-sources",
+    "project",
     "--allowedTools",
     ...tools,
   ];
   if (mcpConfig) args.push("--mcp-config", mcpConfig, "--strict-mcp-config");
+  // Optionally confine the agent to a deployed-agent-grade box via sandbox-exec: deny exec/read of the
+  // desktop browser app bundles, so Playwright's `channel:"chrome"` escape hatch is gone and it falls
+  // back to headless bundled Chromium — which the DOAJ Cloudflare wall still blocks. Without this, a
+  // dev laptop's logged-in, headed Chrome passes the managed challenge and the comparison is a lie.
+  const browserApps = [
+    "/Applications/Google Chrome.app",
+    "/Applications/Google Chrome Canary.app",
+    "/Applications/Chromium.app",
+    "/Applications/Microsoft Edge.app",
+    "/Applications/Brave Browser.app",
+  ];
+  const sbProfile =
+    "(version 1)(allow default)" +
+    browserApps
+      .map((p) => `(deny process-exec* (subpath "${p}"))(deny file-read* (subpath "${p}"))`)
+      .join("");
+  const cmd = sandbox ? "sandbox-exec" : "claude";
+  const spawnArgs = sandbox ? ["-p", sbProfile, "claude", ...args] : args;
   // spawn with stdin = /dev/null (`ignore`) so claude doesn't block waiting on stdin, and stream stdout
   // line-by-line. We tolerate a non-zero exit (use whatever streamed) instead of throwing it all away.
-  const child = spawn("claude", args, { cwd, stdio: ["ignore", "pipe", "pipe"] });
+  // `detached` makes the child its own process-group leader, so on quit we can SIGKILL the entire tree
+  // (claude + the bash/python/headless-Chromium it spawns) by signalling -pid — see registerCleanup().
+  const child = spawn(cmd, spawnArgs, { cwd, stdio: ["ignore", "pipe", "pipe"], detached: true });
+  liveAgents.add(child);
   const raw: string[] = [];
   const events: Ev[] = [];
   const rl = createInterface({ input: child.stdout });
@@ -172,6 +293,7 @@ async function runClaude(
   });
   child.stderr.on("data", () => {});
   await new Promise<void>((res) => child.on("close", () => res()));
+  liveAgents.delete(child);
   writeFileSync(`${logBase}.jsonl`, `${raw.join("\n")}\n`);
   writeFileSync(`${logBase}.log`, renderTranscript(title, prompt, events));
   const res = (events.find((e) => e.type === "result") ?? {}) as Ev;
@@ -250,16 +372,22 @@ async function main(): Promise<void> {
   const agentPk = (process.env.AQUEDUCT_AGENT_KEY as `0x${string}`) ?? generatePrivateKey();
   const agent = privateKeyToAccount(agentPk);
 
-  // ── 1. BUILD — the builder onboards the CSV into a Tap (deterministic, no LLM) ────────────────────
-  rule("BUILD — the builder onboards a CSV into a metered Tap (one command, no LLM)");
-  console.log(`  ${dim("$")} aqueduct onboard ${CSV} --recipient ${server.address.slice(0, 10)}…`);
+  // ── 1. BUILD — the builder onboards a dataset into a Tap (deterministic, no LLM) ───────────────────
+  rule("BUILD — the builder onboards a dataset into a metered Tap (one command, no LLM)");
+  console.log(`  ${dim("Onboard a dataset into a Tap. Press enter to accept the prefilled defaults.")}`);
+  const csvPath = await ask("dataset to ingest (csv path):", CSV);
+  const unitPrice = await ask("price per row (pathUSD):", "0.0001");
+  const name = basename(csvPath, extname(csvPath)) || "tap";
+  console.log(
+    `  ${dim("$")} aqueduct onboard ${csvPath} --unit-price ${unitPrice} --recipient ${server.address.slice(0, 10)}…`,
+  );
   const engine = await DuckDbEngine.create();
   const onb = await deriveConfig(
     {
-      name: "doaj-journals",
+      name,
       source: {
         format: "csv",
-        location: { via: "path", ref: CSV },
+        location: { via: "path", ref: csvPath },
         authEnv: null,
         contract: { determinism: "deterministic", freshnessWindow: "24h" },
       },
@@ -267,6 +395,7 @@ async function main(): Promise<void> {
       currency: PATH_USD,
     },
     { engine },
+    { unitPrice },
   );
   if (!onb.ok) throw new Error(`onboard failed: ${JSON.stringify(onb.error)}`);
   const config = {
@@ -320,6 +449,15 @@ async function main(): Promise<void> {
   // ── 3. RACE — the two agents, one after the other, streaming live ─────────────────────────────────
   const aqDir = mkdtempSync(join(tmpdir(), "aq-with-"));
   const ownDir = mkdtempSync(join(tmpdir(), "aq-own-"));
+
+  // Plant the one `aqueduct` skill the WITH-Aqueduct agent is allowed to have, as a project skill in
+  // its cwd (the only skill it gets beyond the defaults, since we load --setting-sources project). It
+  // drives the MCP tools it already holds — query.ts isn't on this isolated cwd, and giving it the repo
+  // would let it read the local CSV and skip paying, which is exactly what the Tap is meant to replace.
+  const skillDir = join(aqDir, ".claude", "skills", "aqueduct");
+  mkdirSync(skillDir, { recursive: true });
+  writeFileSync(join(skillDir, "SKILL.md"), AQUEDUCT_SKILL);
+
   const before = await balanceStable(agent.address);
 
   rule("AGENT 1 — WITH AQUEDUCT  (queries the Tap, pays per row over MPP)");
@@ -339,6 +477,8 @@ async function main(): Promise<void> {
     ownDir,
     "recordings/on-its-own",
     "THE AGENT ON ITS OWN",
+    undefined, // no MCP — it has to fend for itself
+    true, // sandbox to a deployed-agent box: no desktop browser to borrow for the Cloudflare wall
   );
 
   const spent = Number(before - (await balanceStable(agent.address))) / 1e6;

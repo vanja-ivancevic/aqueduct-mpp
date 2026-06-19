@@ -61,6 +61,33 @@ An agent reaches a Tap two ways: the **`aqueduct` skill** (`skills/aqueduct/`) o
 (`npx aqueduct-mcp`, see [docs/mcp.md](./docs/mcp.md)) — discover Taps, read a schema for free, then
 pay per row. The LLM is always the *client*; it never sits in the serving path.
 
+## Run it yourself (Tempo Moderato testnet)
+
+Everything runs on the public **Tempo Moderato testnet** — test tokens only, no real money (default RPC
+`https://rpc.moderato.tempo.xyz`, settlement in testnet pathUSD). Requires Node ≥ 20; the agent demo
+also needs the `claude` CLI on your PATH.
+
+```bash
+git clone https://github.com/vanja-ivancevic/aqueduct-mpp.git
+cd aqueduct-mpp
+npm install && npm run build      # build compiles dist/, incl. the MCP server (dist/mcp.js)
+npm run demo                      # onboard a CSV → serve a Tap → race two identical agents on it
+```
+
+`npm run demo` needs **no keys** — it generates throwaway wallets and funds them from the public faucet,
+so it spends no real money. To drive a Tap by hand instead — `serve` it and query it (see
+[Build a Tap](#build-a-tap-you-the-data-publisher) below) — you need a funded wallet. Generate one and
+top it up from the faucet:
+
+```bash
+export AQUEDUCT_PRIVATE_KEY=$(node -e "import('viem/accounts').then(m=>console.log(m.generatePrivateKey()))")
+npm run faucet                    # funds the address derived from AQUEDUCT_PRIVATE_KEY (idempotent)
+```
+
+Fund an agent's spending wallet the same way: `AQUEDUCT_AGENT_KEY=0x… npm run faucet`. Actually buying
+rows over MPP needs a wallet-holding client — the MCP server (`npx aqueduct-mcp`, see
+[docs/mcp.md](./docs/mcp.md)) or the `aqueduct` skill; a raw `curl` to a paid `/query` returns `402`.
+
 ## Why a Tap, not your own pipeline?
 
 The data is public — so why a Tap instead of fetching it yourself? Two reasons, one per side of the
