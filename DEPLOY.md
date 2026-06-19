@@ -16,7 +16,7 @@ profile file ──onboard(deterministic)──► Tap config ──serve──�
 |-----|----------|---------|
 | `AQUEDUCT_PRIVATE_KEY` | yes | server wallet key — receives settlement |
 | `AQUEDUCT_RECIPIENT`   | yes | payout address (usually the server wallet's own address) |
-| `AQUEDUCT_SECRET`      | yes | MPP challenge-signing secret — `openssl rand -hex 32`. Stable across restarts |
+| `AQUEDUCT_SECRET`      | no¹ | MPP challenge-signing secret — `openssl rand -hex 32`. Random per process if unset; ¹set it to keep it stable across restarts (required for a multi-replica deploy behind a shared session store) |
 | `AQUEDUCT_DATASET`     | no  | dataset path baked in the image (default `examples/exoplanets.csv`) |
 | `AQUEDUCT_SPONSOR_KEY` | no  | a **separate** funded wallet to sponsor agents' gas. Must differ from the settlement wallet |
 | `AQUEDUCT_RPC_URL`     | no  | Tempo RPC (default: Moderato testnet) |

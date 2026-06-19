@@ -114,7 +114,7 @@ What a request costs. Full reference in [pricing.md](./pricing.md).
   "unit": "row",                   // "row" | "page" | "query" | "byte" | "result-set"
   "unitDefinition": "one returned row",
   "unitPrice": "0.0001",           // decimal STRING, never a float; must be > 0
-  "currency": "0x20c0…"            // settlement token address (testnet pathUSD by default)
+  "currency": "0x20c0000000000000000000000000000000000000"            // settlement token address (testnet pathUSD by default)
 }
 ```
 
@@ -174,7 +174,7 @@ Settlement. MVP is an MPP **session** on Tempo.
 "mpp": {
   "intent": "session",             // fixed: off-chain channel, signed vouchers, one on-chain settle
   "recipient": "0x…",              // payout address (where settlement lands)
-  "currency": "0x20c0…",           // settlement token (matches pricing.currency)
+  "currency": "0x20c0000000000000000000000000000000000000",           // settlement token (matches pricing.currency)
   "feePayer": true                 // may sponsor agent gas — only honored if a DISTINCT sponsor wallet is configured at serve time
 }
 ```

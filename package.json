@@ -4,6 +4,7 @@
   "type": "module",
   "description": "Compile any dataset into a Tap: a metered, agent-payable, MPP-session data feed on Tempo.",
   "license": "MIT",
+  "author": "Vanja Ivancevic",
   "keywords": [
     "mpp",
     "tempo",
@@ -18,6 +19,7 @@
     "type": "git",
     "url": "git+https://github.com/vanja-ivancevic/aqueduct-mpp.git"
   },
+  "bugs": "https://github.com/vanja-ivancevic/aqueduct-mpp/issues",
   "bin": {
     "aqueduct": "dist/cli.js",
     "aqueduct-mpp": "dist/cli.js",
@@ -43,7 +45,6 @@
     "access": "public"
   },
   "scripts": {
-    "postinstall": "patch-package",
     "build": "tsup",
     "aqueduct": "tsx cli/index.ts",
     "aqueduct-mcp": "tsx mcp/server.ts",
@@ -61,7 +62,6 @@
     "@hono/node-server": "^1.19.14",
     "hono": "^4.12.25",
     "mppx": "^0.7.0",
-    "patch-package": "^8.0.1",
     "viem": "^2.52.2",
     "zod": "^4.4.3"
   },

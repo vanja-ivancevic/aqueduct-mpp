@@ -127,7 +127,7 @@ SQL**), priced per row. For a static file the source contract is just a *determi
 *freshness window*; richer terms land with volatile sources.
 
 **Roadmap (designed, not built):** volatile/live APIs, SQL DBs, scraped/messy sources, agentic
-ingestion; per-row SSE streaming (works end-to-end but opt-in, needs two mppx SSE-metering patches);
+ingestion; per-row SSE streaming (prototyped then cut from MVP — needs mppx SSE-metering fixes upstream);
 self-heal loop on eval drift; persistent/shared session Store (in-memory today → single-process only);
 hosted Akash cold-deploy; research scheduler; demand board; on-chain eval attestations.
 

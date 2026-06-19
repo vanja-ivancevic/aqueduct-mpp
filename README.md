@@ -1,5 +1,8 @@
 # Aqueduct
 
+[![npm](https://img.shields.io/npm/v/aqueduct-mpp)](https://www.npmjs.com/package/aqueduct-mpp)
+[![license](https://img.shields.io/npm/l/aqueduct-mpp)](./LICENSE)
+
 **A maintained data dependency for your app — or your agent.** One command turns any dataset into a
 *Tap*: a live, metered HTTP feed your app consumes in a few lines and **never maintains**. The
 publisher builds the pipeline *once* — fetch, normalize, keep-fresh, serve, meter — and everyone
@@ -220,3 +223,7 @@ The team's conclusions + market rationale are in [`knowledge/CONCLUSIONS.md`](./
 ## Links
 
 Docs: https://mpp.dev · MPP repo: https://github.com/tempoxyz/mpp · Spec: https://paymentauth.org
+
+## License
+
+MIT © Vanja Ivancevic — see [LICENSE](./LICENSE).
