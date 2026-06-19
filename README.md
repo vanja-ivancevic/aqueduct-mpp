@@ -15,6 +15,8 @@ Tap collapses that to **build-the-pipeline-once-for-everyone**. App builders emb
 without owning a pipeline; agents consume the same feed the same way. DuckDB + MPP are the engine; the
 **maintained, uniform feed** is the product.
 
+![Aqueduct system architecture — a dataset is compiled (DuckDB profiling → config assembly → eval gate) into a frozen ValidatedConfig that the runtime serves: agents discover and read the schema for free, then pay per row over an MPP session on Tempo, with parameterized DuckDB queries, a query-hash cache, and non-custodial settlement to the publisher's wallet.](./docs/architecture.png)
+
 ```
 npx aqueduct-mpp onboard data.parquet --recipient 0xYourPayout   # → data.tap.json
 AQUEDUCT_PRIVATE_KEY=0x… npx aqueduct-mpp serve data.tap.json     # → live Tap on :8402

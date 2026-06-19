@@ -1,0 +1,159 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1680 980" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="a" markerWidth="10" markerHeight="10" refX="7.5" refY="3" orient="auto"><path d="M0,0 L7.5,3 L0,6 Z" fill="#222831"/></marker>
+    <marker id="at" markerWidth="10" markerHeight="10" refX="7.5" refY="3" orient="auto"><path d="M0,0 L7.5,3 L0,6 Z" fill="#0f7b8a"/></marker>
+    <marker id="ag" markerWidth="10" markerHeight="10" refX="7.5" refY="3" orient="auto"><path d="M0,0 L7.5,3 L0,6 Z" fill="#b8860b"/></marker>
+    <marker id="ap" markerWidth="10" markerHeight="10" refX="7.5" refY="3" orient="auto"><path d="M0,0 L7.5,3 L0,6 Z" fill="#b5532a"/></marker>
+    <style>
+      .zone{fill-opacity:1;stroke-width:1.5;rx:16}
+      .box{fill:#fff;stroke:#222831;stroke-width:1.5;rx:9}
+      .gold{fill:#fdecc8;stroke:#b8860b;stroke-width:2;rx:9}
+      .paid{fill:#fbeee7;stroke:#b5532a;stroke-width:1.8;rx:9}
+      .teal{fill:#eaf5f7;stroke:#0f7b8a;stroke-width:1.6;rx:9}
+      .h{font-size:15px;font-weight:700;fill:#16181d}
+      .s{font-size:11.5px;fill:#55606e}
+      .zt{font-size:14px;font-weight:700;letter-spacing:.08em}
+      .lb{font-size:11.5px;fill:#33404e}
+      .lbt{font-size:11.5px;fill:#0f7b8a;font-weight:700}
+      .lbp{font-size:11.5px;fill:#b5532a;font-weight:700}
+      .badge{font-size:11px;font-weight:700}
+      .e{stroke:#222831;stroke-width:1.6;fill:none}
+      .et{stroke:#0f7b8a;stroke-width:1.8;fill:none}
+      .ep{stroke:#b5532a;stroke-width:2;fill:none}
+      .eg{stroke:#b8860b;stroke-width:2;fill:none;stroke-dasharray:6 5}
+    </style>
+  </defs>
+
+  <text x="840" y="44" text-anchor="middle" font-size="24" font-weight="700" fill="#16181d">Aqueduct — System Architecture</text>
+  <text x="840" y="68" text-anchor="middle" font-size="14" fill="#55606e">any dataset → a metered, agent-payable Tap · paid per row over MPP, settled on Tempo</text>
+
+  <!-- ===== ZONE A: compile-time ===== -->
+  <rect class="zone" x="34" y="92" width="486" height="828" fill="#fff8ee" stroke="#e3b873"/>
+  <text x="58" y="120" class="zt" fill="#b07b14">COMPILE-TIME</text>
+  <text x="58" y="138" class="s" fill="#b07b14">builder · runs once per dataset</text>
+  <rect x="372" y="104" width="126" height="26" rx="13" fill="#fff" stroke="#b5532a"/>
+  <text x="435" y="121" text-anchor="middle" class="badge" fill="#b5532a">NO LLM HERE</text>
+
+  <!-- A0 source -->
+  <rect class="box" x="62" y="160" width="430" height="58" rx="9"/>
+  <text x="277" y="184" text-anchor="middle" class="h">Data source</text>
+  <text x="277" y="202" text-anchor="middle" class="s">CSV · Parquet · JSON  —  one HTTP GET or local path</text>
+  <path class="e" d="M277,218 L277,250" marker-end="url(#a)"/>
+  <text x="287" y="238" class="lb">aqueduct onboard</text>
+
+  <!-- A1 duckdb profile -->
+  <rect class="box" x="62" y="252" width="430" height="52" rx="9"/>
+  <text x="277" y="274" text-anchor="middle" class="h">DuckDB — profile file</text>
+  <text x="277" y="291" text-anchor="middle" class="s">infers columns + types</text>
+  <path class="e" d="M277,304 L277,336" marker-end="url(#a)"/>
+
+  <!-- A2 assemble config -->
+  <rect class="box" x="62" y="338" width="430" height="86" rx="9"/>
+  <text x="277" y="360" text-anchor="middle" class="h">Assemble config</text>
+  <text x="277" y="380" text-anchor="middle" class="s">schema · query interface (filters / columns / sorts)</text>
+  <text x="277" y="397" text-anchor="middle" class="s">per-row price · payout address</text>
+  <text x="277" y="414" text-anchor="middle" class="s">source contract — determinism + freshness window</text>
+  <path class="e" d="M277,424 L277,456" marker-end="url(#a)"/>
+
+  <!-- A3 eval gate -->
+  <rect class="box" x="62" y="458" width="430" height="62" rx="9"/>
+  <text x="277" y="481" text-anchor="middle" class="h">Eval gate</text>
+  <text x="277" y="499" text-anchor="middle" class="s">coverage · schema · golden counts · invariants · freshness</text>
+  <text x="277" y="514" text-anchor="middle" class="s" font-style="italic">must pass — or the Tap will not serve</text>
+  <path class="e" d="M277,520 L277,552" marker-end="url(#a)"/>
+  <text x="287" y="540" class="lb">pass</text>
+
+  <!-- A4 validated config (artifact) -->
+  <rect class="gold" x="62" y="554" width="430" height="68" rx="9"/>
+  <text x="277" y="580" text-anchor="middle" class="h">ValidatedConfig</text>
+  <text x="277" y="599" text-anchor="middle" class="s">frozen · versioned JSON — the single source of truth</text>
+  <text x="277" y="615" text-anchor="middle" class="s">the only artifact the runtime executes</text>
+
+  <!-- ===== ZONE B: runtime ===== -->
+  <rect class="zone" x="556" y="92" width="1090" height="828" fill="#edf6f8" stroke="#7cc2cd"/>
+  <text x="582" y="120" class="zt" fill="#0c6c79">RUNTIME — hot path</text>
+  <text x="582" y="138" class="s" fill="#0c6c79">per paid request · deterministic · no LLM</text>
+
+  <!-- agent -->
+  <rect class="box" x="582" y="158" width="430" height="66" rx="9"/>
+  <text x="797" y="182" text-anchor="middle" class="h">Agent / App  +  funded wallet</text>
+  <text x="797" y="201" text-anchor="middle" class="s">connects via MCP (npx aqueduct-mcp) · Claude skill · HTTP</text>
+  <text x="797" y="216" text-anchor="middle" class="s">never sends SQL — only declared filters/columns/sorts</text>
+
+  <!-- registry -->
+  <rect class="box" x="1410" y="158" width="216" height="66" rx="9"/>
+  <text x="1518" y="186" text-anchor="middle" class="h">MPP Registry</text>
+  <text x="1518" y="205" text-anchor="middle" class="s">tap discovery</text>
+  <path class="e" d="M1012,180 L1404,180" marker-end="url(#a)"/>
+  <text x="1208" y="172" text-anchor="middle" class="lb">discover — free</text>
+
+  <!-- tap server container -->
+  <rect x="582" y="300" width="1044" height="320" rx="12" fill="#fbfdfd" stroke="#0f7b8a" stroke-width="1.6"/>
+  <text x="604" y="328" class="zt" fill="#0c6c79" font-size="15">TAP SERVER  (hono)</text>
+
+  <!-- S1 MPP session (paid) -->
+  <rect class="paid" x="606" y="346" width="488" height="116" rx="9"/>
+  <text x="850" y="372" text-anchor="middle" class="h" fill="#9e3f1c">MPP session  ·  paid</text>
+  <text x="850" y="392" text-anchor="middle" class="s">HTTP 402 challenge → signed voucher per request</text>
+  <text x="850" y="409" text-anchor="middle" class="s">off-chain Tempo payment channel</text>
+  <text x="850" y="426" text-anchor="middle" class="s">price = returned rows × unitPrice</text>
+  <text x="850" y="446" text-anchor="middle" class="s" font-style="italic">0-row query = free · verify in microseconds</text>
+
+  <!-- S2 query planner -->
+  <rect class="teal" x="1114" y="346" width="488" height="116" rx="9"/>
+  <text x="1358" y="372" text-anchor="middle" class="h" fill="#0c6c79">Query planner</text>
+  <text x="1358" y="392" text-anchor="middle" class="s">constrained request → parameterized DuckDB SQL</text>
+  <text x="1358" y="409" text-anchor="middle" class="s">declared fields only — values stay data, never SQL</text>
+  <text x="1358" y="429" text-anchor="middle" class="s" font-style="italic">the security perimeter</text>
+
+  <!-- S3 cache -->
+  <rect class="teal" x="606" y="478" width="488" height="118" rx="9"/>
+  <text x="850" y="504" text-anchor="middle" class="h" fill="#0c6c79">Result cache</text>
+  <text x="850" y="524" text-anchor="middle" class="s">key = query hash · TTL ≤ freshness window</text>
+  <text x="850" y="541" text-anchor="middle" class="s">hit → served in &lt;100 ms, no upstream fetch</text>
+  <text x="850" y="561" text-anchor="middle" class="s">miss → refresh from source (URL) or snapshot</text>
+
+  <!-- S4 duckdb execute -->
+  <rect class="teal" x="1114" y="478" width="488" height="118" rx="9"/>
+  <text x="1358" y="504" text-anchor="middle" class="h" fill="#0c6c79">DuckDB — execute</text>
+  <text x="1358" y="524" text-anchor="middle" class="s">runs the parameterized query → rows</text>
+  <text x="1358" y="541" text-anchor="middle" class="s">reads the frozen snapshot (Parquet/CSV/JSON)</text>
+  <text x="1358" y="561" text-anchor="middle" class="s">returns only declared columns</text>
+
+  <!-- agent <-> server arrows -->
+  <path class="et" d="M740,224 L740,294" marker-end="url(#at)"/>
+  <text x="734" y="262" text-anchor="end" class="lbt">GET /schema — free</text>
+  <path class="ep" d="M860,224 L860,340" marker-end="url(#ap)"/>
+  <text x="872" y="250" class="lbp">POST /query — paid</text>
+  <path class="e" d="M980,300 C980,250 1040,250 1040,224" marker-end="url(#a)"/>
+  <text x="1052" y="262" class="lb">rows (JSON)</text>
+
+  <!-- config -> server (seam) -->
+  <path class="eg" d="M494,588 C548,588 548,440 600,440" marker-end="url(#ag)"/>
+  <text x="540" y="468" text-anchor="middle" class="lb" fill="#b07b14">deploy · serve</text>
+  <text x="540" y="484" text-anchor="middle" class="s" fill="#b07b14">executes config</text>
+
+  <!-- ===== settlement band ===== -->
+  <rect class="paid" x="606" y="664" width="488" height="86" rx="9"/>
+  <text x="850" y="692" text-anchor="middle" class="h" fill="#9e3f1c">Tempo — settlement</text>
+  <text x="850" y="712" text-anchor="middle" class="s">on session close: one on-chain settle of the channel</text>
+  <text x="850" y="730" text-anchor="middle" class="s">peer-to-peer · non-custodial (Aqueduct never holds funds)</text>
+
+  <rect class="box" x="1190" y="664" width="412" height="86" rx="9"/>
+  <text x="1396" y="692" text-anchor="middle" class="h">Publisher wallet</text>
+  <text x="1396" y="712" text-anchor="middle" class="s">receives rows × unitPrice</text>
+  <text x="1396" y="730" text-anchor="middle" class="s">the builder's payout address</text>
+
+  <path class="ep" d="M850,620 L850,660" marker-end="url(#ap)"/>
+  <text x="862" y="646" class="lbp">settle on close</text>
+  <path class="ep" d="M1094,706 L1184,706" marker-end="url(#ap)"/>
+  <text x="1139" y="697" text-anchor="middle" class="lbp">pay</text>
+
+  <!-- ===== legend ===== -->
+  <g transform="translate(60,892)">
+    <line x1="0" y1="-4" x2="30" y2="-4" class="e" marker-end="url(#a)"/><text x="38" y="0" class="s">control / data</text>
+    <line x1="170" y1="-4" x2="200" y2="-4" class="ep" marker-end="url(#ap)"/><text x="208" y="0" class="s">paid (MPP / Tempo)</text>
+    <line x1="372" y1="-4" x2="402" y2="-4" class="eg" marker-end="url(#ag)"/><text x="410" y="0" class="s">artifact handoff (compile-time → runtime)</text>
+    <rect x="700" y="-13" width="18" height="13" class="gold"/><text x="724" y="0" class="s">frozen config = single source of truth</text>
+  </g>
+</svg>
