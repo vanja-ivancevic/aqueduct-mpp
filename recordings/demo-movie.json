@@ -115,12 +115,12 @@
       "hold": 12
     },
     {
-      "narration": "Every door is shut. After four and a half minutes, twenty-six turns, and a dollar fifty of compute, it gives up and guesses from memory. And the answer is wrong.",
+      "narration": "Every door is shut. After seventeen minutes, forty turns, and over two-and-a-half dollars of compute, it stops — and refuses to guess an answer it can't verify.",
       "render": [
-        { "text": "  → guessed from training memory:", "style": "dim" },
-        { "text": "  answer:  Pediatric Neurology Briefs        ✗ WRONG", "style": "red" },
+        { "text": "  → every route returned 403:", "style": "dim" },
+        { "text": "  answer:  no answer — refused to guess     ✗ BLOCKED", "style": "red" },
         {
-          "text": "  time: 285s   ·   cost: $1.51   ·   26 turns   ·   data: BLOCKED",
+          "text": "  time: 1028s  ·   cost: $2.59   ·   40 turns   ·   data: BLOCKED",
           "style": "yellow"
         }
       ],
@@ -134,7 +134,7 @@
         { "text": "  aqueduct_query  (1 paid query) . 5 rows", "style": "green", "type": true },
         { "text": "  answer:  Memorias do Instituto Oswaldo Cruz   ✓ CORRECT", "style": "green" },
         {
-          "text": "  time: 56s    ·   cost: $0.28   ·   5 turns    ·   data: paid per row (MPP)",
+          "text": "  time: 32s    ·   cost: $0.28   ·   7 turns    ·   data: paid per row (MPP)",
           "style": "cyan"
         }
       ],
@@ -142,12 +142,12 @@
     },
     {
       "rule": "RESULT",
-      "narration": "Five times faster. Five times cheaper. And the difference between a correct answer and a confident hallucination — decided entirely by whether the agent could reach clean, complete data.",
+      "narration": "Thirty times faster. Nine times cheaper. And the difference between a correct answer and no answer at all — decided entirely by whether the agent could reach clean, complete data.",
       "render": [
         { "text": "            WITH AQUEDUCT          ON ITS OWN", "style": "bold" },
-        { "text": "  answer    correct  ✓             wrong  ✗", "style": "plain" },
-        { "text": "  time      56 s                   285 s", "style": "plain" },
-        { "text": "  agent $   $0.28                  $1.51   (model compute)", "style": "plain" },
+        { "text": "  answer    correct  ✓             none  ✗  (wouldn't guess)", "style": "plain" },
+        { "text": "  time      32 s                   17 min", "style": "plain" },
+        { "text": "  agent $   $0.28                  $2.59   (model compute)", "style": "plain" },
         { "text": "  data      one paid MPP query     blocked at the origin", "style": "plain" }
       ],
       "hold": 11

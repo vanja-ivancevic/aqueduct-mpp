@@ -1,5 +1,5 @@
 /**
- * Query-result cache — the hot-path infrastructure CLAUDE.md promises (cache hit < 100ms).
+ * Query-result cache — the hot-path infrastructure (cache hit < 100ms).
  *
  * For a static file, the answer to a given query plan is stable until the source refreshes, so we
  * memoize plan → rows with a TTL. A hit serves without touching DuckDB AND without the billing

@@ -1,5 +1,5 @@
 /**
- * The Tap config — the single source of truth for a Tap's *behavior* (CLAUDE.md invariant 2).
+ * The Tap config — the single source of truth for a Tap's *behavior* (a core invariant).
  *
  * MVP scope: **static structured files (parquet | csv | json), served via DuckDB.** The onboarding
  * LLM profiles a file and authors this config; the runtime executes it. Nothing here is logic — it
@@ -26,7 +26,7 @@ const Duration = z.string().regex(/^(\d+[smhd])+$/, "duration, e.g. 24h");
 /** Reference to an env var holding a secret — never an inline secret. */
 const EnvRef = z.string().regex(/^[A-Z][A-Z0-9_]*$/, "UPPER_SNAKE env var name");
 
-// ── source contract (the declared basis for any correctness claim — CLAUDE.md scope) ─────────────
+// ── source contract (the declared basis for any correctness claim — MVP scope) ────────────────────
 // MVP serves static deterministic files, so the contract is just: which determinism class, and how
 // fresh the snapshot is. Volatility/identity/comparison strategies arrive with volatile sources
 // (roadmap), not before — declaring fields the runtime ignores would be dishonest.
@@ -111,7 +111,7 @@ export const Pricing = z.object({
   currency: Address,
 });
 
-// ── cache (named runtime state, not hidden — CLAUDE.md invariant 3) ──────────
+// ── cache (named runtime state, not hidden) ──────────────────────────────────
 export const Cache = z.object({ key: z.literal("queryHash"), ttl: Duration });
 
 // ── evals (one suite; gates onboarding + repairs + publishes score) ──────────

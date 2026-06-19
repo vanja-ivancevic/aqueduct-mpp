@@ -5,7 +5,7 @@
  * authors the `Decisions` (a pure function of the schema vs. one model call). Everything downstream —
  * the inputs the builder must not invent, the tunable options, and the final merge into a config
  * object — is identical. It lives here so the no-LLM spine never has to import the LLM pipeline
- * (CLAUDE.md invariant 1: the deterministic path carries no LLM concern).
+ * (the deterministic path carries no LLM concern).
  */
 import { z } from "zod";
 import { type FieldSpec, QueryInterface, type Source, type ValidatedConfig } from "./config";

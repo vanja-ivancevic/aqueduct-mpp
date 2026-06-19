@@ -13,8 +13,7 @@ The alternative is what every team does today: build, host, and *babysit* its ow
 same public data — duplicated across every app that needs it, breaking whenever the source moves. A
 Tap collapses that to **build-the-pipeline-once-for-everyone**. App builders embed a data feature
 without owning a pipeline; agents consume the same feed the same way. DuckDB + MPP are the engine; the
-**maintained, uniform feed** is the product. (Honest scope — where this wins and where it's a wash:
-[`knowledge/CONCLUSIONS.md`](./knowledge/CONCLUSIONS.md).)
+**maintained, uniform feed** is the product.
 
 ```
 npx aqueduct-mpp onboard data.parquet --recipient 0xYourPayout   # → data.tap.json
@@ -42,20 +41,21 @@ overwhelmed it (traffic spiked **968%** over the prior year in a single day). So
 
 | | With Aqueduct | On its own |
 |---|---|---|
-| answer | **correct** ✓ | **wrong** ✗ (guessed from memory) |
-| time | 56 s | 285 s |
-| agent cost | $0.28 | $1.51 |
+| answer | **correct** ✓ | **none** ✗ — walled out, wouldn't guess |
+| time | 32 s | 17 min |
+| agent cost | $0.28 | $2.59 |
 | data | one paid MPP query | blocked at the origin (403) |
 
-Walled off, the lone agent burned 4.75 minutes and $1.51 to produce a confident *hallucination* — it
-never reached the data to rank against. The Aqueduct agent paid a fraction of a cent per row and
-answered correctly, while DOAJ's origin was never touched. Nothing is staged (each agent runs in an
-isolated dir so neither can read the repo's local copy); re-run it with `npm run demo`.
+Walled off, the lone agent spent ~17 minutes and $2.59 probing every route into DOAJ — the bulk CSV,
+the API, OAI-PMH, the S3 cache, the Wayback Machine — hit a `403` at each, then stopped, refusing to
+fabricate a ranking it couldn't verify. The Aqueduct agent paid a fraction of a cent per row
+(0.0114 pathUSD) and answered correctly, while DOAJ's origin was never touched. Nothing is staged (each
+agent runs in an isolated dir so neither can read the repo's local copy); re-run it with `npm run demo`.
 
 **Record it.** `npm run demo:replay` plays the run back as a beat-by-beat "movie" you advance with the
-spacebar (or `--auto`), so the on-screen action tracks your narration — see
-[docs/demo-script.md](./docs/demo-script.md). The builder side is `scripts/refresh-doaj.ts`: a manually
-downloaded DOAJ CSV → one command → a metered Tap (22,940 journals, eval-gated, no LLM).
+spacebar (or `--auto`), so the on-screen action tracks your narration. The builder side is
+`scripts/refresh-doaj.ts`: a manually downloaded DOAJ CSV → one command → a metered Tap (22,940
+journals, eval-gated, no LLM).
 
 An agent reaches a Tap two ways: the **`aqueduct` skill** (`skills/aqueduct/`) or the **MCP server**
 (`npx aqueduct-mcp`, see [docs/mcp.md](./docs/mcp.md)) — discover Taps, read a schema for free, then
@@ -81,8 +81,7 @@ data payment is the publisher's per-row price.) Alchemy for the open-data long t
 
 (Honest scope: for a *static* file you fetch once and never refresh, DIY is fine — a Tap earns its keep
 on data that's **fresh, walled, normalized, or consumed by many**, where the maintenance and access
-never end. Full build-vs-buy case + the AI-crawler economics that motivate it: [`knowledge/CONCLUSIONS.md`](./knowledge/CONCLUSIONS.md)
-and the deep-research evidence in [`research/`](./research).)
+never end.)
 
 The demo Tap, `examples/doaj-journals.tap.json`, is a 22,940-journal slice of DOAJ compiled with
 `aqueduct onboard`. The container deploy path below bakes a different default dataset —
@@ -193,7 +192,8 @@ and the `DuckDbEngine` adapter.
 - **`runtime/`** — the hot path: a Hono server that executes a config behind an MPP session charge,
   plus a TTL result cache.
 
-See `CLAUDE.md` for the full architecture and its invariants.
+One rule underpins it all: **no LLM ever runs on the paid request path.** Onboarding is the only
+compile step; the runtime that answers a paid request is pure, deterministic config execution.
 
 ## Status & limits
 
@@ -215,10 +215,8 @@ Reference docs live in [`docs/`](./docs/README.md):
 - [Pricing & billing](./docs/pricing.md) — `rows × unitPrice` over an MPP session
 - [Discovery & consumption](./docs/discovery.md) — find/buy Taps via MPP's registry, the skill, the MCP server
 - [MCP server](./docs/mcp.md) — expose discover/schema/query to any MCP agent over stdio (`npx aqueduct-mcp`)
-- [Deploy](./DEPLOY.md) — ship a Tap local ↔ Akash · [Demo](./DEMO.md) — same agent with vs without a Tap (DOAJ) · [Demo script](./docs/demo-script.md) — the 3-min video runbook
-
-The team's conclusions + market rationale are in [`knowledge/CONCLUSIONS.md`](./knowledge/CONCLUSIONS.md)
-(full research history archived locally, out of the published repo).
+- [How it works](./docs/how-it-works.html) — a plain-language visual walkthrough of the two processes (open in a browser)
+- [Deploy](./DEPLOY.md) — ship a Tap local ↔ Akash · [Demo](./DEMO.md) — same agent with vs without a Tap (DOAJ)
 
 ## Links
 

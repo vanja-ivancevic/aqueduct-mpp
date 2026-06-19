@@ -6,7 +6,7 @@
  *
  * This is a thin transport over the shared consumption client (`adapters/client`) — all logic lives
  * there, so the skill and this server can never drift. It sits OUTSIDE `core/` and imports no vendor
- * SDK into core (CLAUDE.md boundaries): it composes the existing client, which already runs the MPP
+ * SDK into core (core boundaries): it composes the existing client, which already runs the MPP
  * session agent-side. The wallet stays agent-side too — `buyRows` pays with the key from the
  * environment, non-custodial (invariant 5). No LLM, no upstream fetch beyond the client's own.
  *

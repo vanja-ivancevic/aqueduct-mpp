@@ -2,7 +2,7 @@
  * Eval engine — one suite, three jobs: gate onboarding, gate repairs, publish a correctness score.
  *
  * Evals need to run queries (I/O), so this module stays out of `core`'s purity rule the right way:
- * it depends on an injected `EvalEngine` interface (CLAUDE.md invariant 6), not on DuckDB. The DuckDB
+ * it depends on an injected `EvalEngine` interface (a core invariant), not on DuckDB. The DuckDB
  * adapter implements it. The eval LOGIC here is pure orchestration over that interface.
  *
  * MVP (static files): correctness = fidelity to the source file. Implemented checks:

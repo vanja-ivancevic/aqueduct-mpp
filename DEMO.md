@@ -9,7 +9,7 @@
 
 ```bash
 npm install && npm run build
-npm run demo            # one run: BUILD (onboard the CSV → Tap) → SERVE → RACE two live agents (~5 min)
+npm run demo            # one run: BUILD (onboard the CSV → Tap) → SERVE → RACE two live agents (~15-20 min)
 npm run demo:replay     # the recorded run as a narratable "movie" for a video (instant, repeatable)
 ```
 
@@ -30,12 +30,12 @@ journals DOAJ indexes. It needs the **whole corpus** to answer faithfully; you c
 
 ```
 ◀ WITH AQUEDUCT                           THE AGENT ON ITS OWN ▶
-answer:  Memorias do Inst. Oswaldo Cruz ✓ answer:  Pediatric Neurology Briefs   ✗ WRONG
-time:    56 s                             time:    285 s
-agent $: $0.28  (5 turns)                 agent $: $1.51  (26 turns)
+answer:  Memorias do Inst. Oswaldo Cruz ✓ answer:  no answer (wouldn't guess) ✗ BLOCKED
+time:    32 s                             time:    17 min
+agent $: $0.28  (7 turns)                 agent $: $2.59  (40 turns)
 data:    one paid MPP query               data:    blocked at DOAJ (403)
-→ 5× faster · 5× cheaper · correct vs hallucinated ✓
-the Aqueduct agent paid per row over MPP, settled on-chain to the publisher's wallet
+→ 30× faster · 9× cheaper · correct vs blocked ✓
+the Aqueduct agent paid per row over MPP (0.0114 pathUSD), settled on-chain to the publisher's wallet
 ```
 
 ## The honest story (why this isn't a rigged benchmark)
@@ -45,10 +45,12 @@ year) that it moved its bulk CSV **and** its REST API behind Cloudflare. That wa
 legitimate AI agents too — verified live: every route an agent tries (`/csv`, `/api`, OAI-PMH,
 firecrawl, WebFetch) returns `403 "Just a moment…"`.
 
-So the "on its own" agent genuinely **cannot** get the data. Walled off, it thrashes for minutes and
-then guesses a plausible-sounding journal from training memory — and gets it **wrong**, because it
-never reached the corpus to rank against. The Aqueduct agent never touches DOAJ: it reads the Tap's
-schema, issues one constrained query, pays per row over MPP, and answers correctly.
+So the "on its own" agent genuinely **cannot** get the data. Walled off, it thrashes for ~17 minutes
+across every route — bulk CSV, API, OAI-PMH, the S3 cache, the Wayback Machine — gets a `403` at each,
+and then stops, **refusing to fabricate** a ranking it can't verify. (On other runs it instead guesses
+a journal from memory and gets it wrong — either way it never reaches the corpus.) The Aqueduct agent
+never touches DOAJ: it reads the Tap's schema, issues one constrained query, pays per row over MPP, and
+answers correctly.
 
 Two guards keep it honest:
 - **Each agent runs in an isolated scratch dir** — neither can read the repo's local copy of the data.
@@ -62,7 +64,7 @@ The supply side is the point. A builder downloads DOAJ's CSV once (past the wall
 
 ```bash
 npm run demo:refresh -- --unit-price 0.0005 --recipient 0xYourPayout
-# normalizing doaj_journalcsv_*.csv → examples/doaj-journals.parquet …
+# normalizing doaj_journalcsv_*.csv → examples/doaj-journals.csv …
 #   wrote 22,940 journals
 # onboarding → examples/doaj-journals.tap.json  (deterministic, no LLM) …
 #   ✓ config written — 3/3 evals passed · price 0.0005/row → 0xYourPa…
@@ -87,8 +89,8 @@ npm run demo:replay -- --auto --speed 1.2  # AUTO, tuned faster
 ```
 
 Manual keys: **SPACE/→** next · **b/←** redo · **q/Ctrl-C** quit. The grey `🎤 say` line is your cue.
-The full spoken script + recording tips: **[docs/demo-script.md](./docs/demo-script.md)**. Capture with
-`asciinema rec aqueduct.cast -c "npm run demo:replay -- --clean --auto"` or just screen-record a manual run.
+Capture with `asciinema rec aqueduct.cast -c "npm run demo:replay -- --clean --auto"` or just
+screen-record a manual run.
 
 ## The architecture in one glance
 

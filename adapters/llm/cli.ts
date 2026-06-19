@@ -6,7 +6,7 @@
  * self-heal uses an API-key provider (openai / openrouter) instead. The prompt goes in on stdin to
  * dodge argv length limits; the response text is returned verbatim for the pipeline to JSON-extract.
  *
- * CLAUDE.md invariant 1 still holds: this runs at ONBOARDING time, never in the request hot path.
+ * This runs at ONBOARDING time, never in the request hot path.
  */
 import { spawn } from "node:child_process";
 import type { LlmProvider } from "../../core/onboard";

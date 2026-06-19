@@ -44,7 +44,7 @@ The skill and the MCP server are both thin transports over one shared client
 | `query(url, request)` | **yes** | buy exactly the rows selected — `rows × unitPrice` over one MPP session |
 
 The wallet stays **agent-side** (`AQUEDUCT_AGENT_KEY`). There is no hosted/shared payer — a central
-one would hold funds and break non-custody ([invariant 5](../CLAUDE.md)).
+one would hold funds and break non-custody (the non-custody invariant).
 
 ### Via the Claude skill
 

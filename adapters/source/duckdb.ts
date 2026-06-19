@@ -99,7 +99,7 @@ function sourceExpr(source: Source): string {
 
 /**
  * A long-lived DuckDB engine (one per Tap). Holds a single connection — initialize once at startup,
- * not per request (CLAUDE.md hot-path budget).
+ * not per request (hot-path budget).
  */
 export class DuckDbEngine implements EvalEngine, OnboardEngine {
   private constructor(

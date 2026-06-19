@@ -11,7 +11,7 @@ import {
 /**
  * Onboarding — turn a static file into a `ValidatedConfig`, with the LLM doing ONLY data judgment.
  *
- * Division of labor (CLAUDE.md invariant 1: no LLM in the hot path; invariant 3: deterministic core,
+ * Division of labor (no LLM in the hot path; deterministic core,
  * explicit edges):
  *   - deterministic   : profile the file (DuckDB DESCRIBE → schema), assemble the config scaffold
  *                       (version/source/pricing/cache/heal/mpp), validate (parse + eval gate).

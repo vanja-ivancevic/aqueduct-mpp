@@ -1,6 +1,6 @@
 # The Tap config
 
-The config is the **single source of truth for a Tap's behavior** (CLAUDE.md invariant 2). It is a
+The config is the **single source of truth for a Tap's behavior** (a core invariant). It is a
 frozen, versioned JSON artifact written by onboarding (`aqueduct onboard`) and
 executed verbatim by the runtime. Nothing here is logic — it is a declarative description of where the
 data is, its schema, the query interface agents may use, pricing, caching, and evals.
@@ -162,7 +162,7 @@ trusted blindly). Produces the published correctness score.
 
 Always-on checks (not configurable): **coverage** (source has rows), **schema** (a sample conforms to
 the declared types), **golden** (pinned counts hold), **invariants** (the SQL booleans hold for all
-rows). Only `sampleSize` is tunable. See [knowledge/CONCLUSIONS.md](../knowledge/CONCLUSIONS.md).
+rows). Only `sampleSize` is tunable.
 
 ---
 

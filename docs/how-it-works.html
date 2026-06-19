@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aqueduct — how it works</title>
+<style>
+  :root{ --ink:#16181d; --soft:#4a4f57; --line:#1c1f24; --rule:#c9cdd4; --fill:#f6f6f4; }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:#fff; color:var(--ink);
+    font-family:Georgia,"Times New Roman",Times,serif;
+    font-size:17px; line-height:1.55;
+    padding:56px 24px 72px;
+  }
+  .paper{max-width:780px;margin:0 auto}
+
+  header{text-align:center;margin-bottom:8px}
+  h1{font-weight:600;font-size:27px;letter-spacing:.01em;margin:0 0 6px}
+  .sub{font-style:italic;color:var(--soft);font-size:16px;margin:0}
+  .abstract{
+    font-size:15.5px;color:var(--ink);margin:26px auto 40px;max-width:680px;text-align:justify;
+    border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:16px 4px;
+  }
+  .abstract b{font-weight:600}
+
+  figure{margin:38px 0;padding:0}
+  .frame{border:1px solid var(--line);padding:26px 18px 24px;background:#fff}
+
+  /* flow diagram */
+  .flow{display:flex;align-items:stretch;justify-content:center;gap:0}
+  .node{
+    flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:7px;
+    padding:0 8px;text-align:center;
+  }
+  .glyph{
+    width:100%;max-width:118px;border:1px solid var(--line);background:var(--fill);
+    padding:12px 8px 11px;border-radius:2px;
+  }
+  .mark{
+    font-family:Georgia,serif;font-size:13px;color:var(--soft);
+    display:block;margin-bottom:3px;font-variant:small-caps;letter-spacing:.06em;
+  }
+  .name{font-size:13.5px;line-height:1.25;font-weight:600;color:var(--ink);display:block}
+  .arrow{display:flex;align-items:center;color:#8b9099;font-size:18px;padding:0 1px;align-self:center}
+  .arrow::before{content:"\2192"}
+
+  .bridge{
+    text-align:center;font-size:14px;font-style:italic;color:var(--soft);
+    margin:6px auto 0;max-width:620px;
+  }
+  figcaption{
+    font-size:14px;line-height:1.6;color:var(--ink);margin-top:14px;text-align:justify;
+  }
+  figcaption .lead{font-weight:600}
+  figcaption .ctx{color:var(--soft);font-style:italic}
+
+  .note{font-size:13.5px;color:var(--soft);text-align:center;margin-top:46px;line-height:1.6}
+  .rule{border:0;border-top:1px solid var(--rule);max-width:120px;margin:40px auto 0}
+
+  @media (max-width:680px){
+    body{padding:36px 16px 48px}
+    .flow{flex-direction:column;align-items:stretch}
+    .node{flex-direction:row;justify-content:flex-start;gap:14px;text-align:left;padding:7px 0}
+    .glyph{max-width:none;width:auto;min-width:150px;flex:0 0 auto}
+    .arrow{transform:rotate(90deg);align-self:center;padding:2px 0}
+  }
+</style>
+</head>
+<body>
+<div class="paper">
+
+  <header>
+    <h1>Aqueduct: how it works</h1>
+    <p class="sub">Turning a data file into something an agent can query and pay for, per row.</p>
+  </header>
+
+  <p class="abstract">
+    Aqueduct separates a dataset's preparation from its use. <b>Building</b> happens once: a file is
+    profiled, priced, checked, and sealed into a frozen configuration. <b>Using</b> happens on every
+    request: an agent queries that configuration and pays per row over a payment channel. The two
+    pictures below trace each path. Crucially, no language model runs on the request path — the
+    configuration produced in Figure&nbsp;1 is the exact, deterministic program executed in Figure&nbsp;2.
+  </p>
+
+  <!-- ===================== FIGURE 1 ===================== -->
+  <figure>
+    <div class="frame">
+      <div class="flow">
+        <div class="node"><div class="glyph"><span class="mark">i</span><span class="name">Source file</span></div></div>
+        <div class="arrow"></div>
+        <div class="node"><div class="glyph"><span class="mark">ii</span><span class="name">Read &amp; profile</span></div></div>
+        <div class="arrow"></div>
+        <div class="node"><div class="glyph"><span class="mark">iii</span><span class="name">Interface &amp; terms</span></div></div>
+        <div class="arrow"></div>
+        <div class="node"><div class="glyph"><span class="mark">iv</span><span class="name">Quality gate</span></div></div>
+        <div class="arrow"></div>
+        <div class="node"><div class="glyph"><span class="mark">v</span><span class="name">Frozen tap</span></div></div>
+      </div>
+    </div>
+    <figcaption>
+      <span class="lead">Figure 1. Building a tap</span> <span class="ctx">— done once, by the data publisher.</span>
+      <b>(i)</b> A data file (CSV, Parquet, or JSON), fetched once from a URL or read from disk.
+      <b>(ii)</b> Aqueduct reads it with an embedded query engine (DuckDB) and derives the columns and their types.
+      <b>(iii)</b> The publisher declares the <i>query interface</i> — which fields can be filtered, returned, and sorted —
+      then sets a price per row, a payout address, and how fresh the data is promised to be.
+      <b>(iv)</b> Automated checks run: the data has rows, a sample matches the declared types, fixed test
+      queries return the expected counts, and per-row rules hold. If any check fails, the tap does not go live.
+      <b>(v)</b> The result is a small, versioned configuration file — sealed and immutable. It is the only
+      thing that defines the tap's behaviour, and it never changes once published.
+    </figcaption>
+  </figure>
+
+  <p class="bridge">The frozen tap from Figure&nbsp;1 is exactly what the server runs in Figure&nbsp;2.</p>
+
+  <!-- ===================== FIGURE 2 ===================== -->
+  <figure>
+    <div class="frame">
+      <div class="flow">
+        <div class="node"><div class="glyph"><span class="mark">i</span><span class="name">Agent</span></div></div>
+        <div class="arrow"></div>
+        <div class="node"><div class="glyph"><span class="mark">ii</span><span class="name">Find a tap</span></div></div>
+        <div class="arrow"></div>
+        <div class="node"><div class="glyph"><span class="mark">iii</span><span class="name">Read terms</span></div></div>
+        <div class="arrow"></div>
+        <div class="node"><div class="glyph"><span class="mark">iv</span><span class="name">Pay &amp; ask</span></div></div>
+        <div class="arrow"></div>
+        <div class="node"><div class="glyph"><span class="mark">v</span><span class="name">Answer</span></div></div>
+        <div class="arrow"></div>
+        <div class="node"><div class="glyph"><span class="mark">vi</span><span class="name">Settle</span></div></div>
+      </div>
+    </div>
+    <figcaption>
+      <span class="lead">Figure 2. Using a tap</span> <span class="ctx">— done on every request, by an app or AI agent.</span>
+      <b>(i)</b> An agent holds a funded wallet.
+      <b>(ii)</b> It finds a tap in a shared registry — free, no payment.
+      <b>(iii)</b> It reads the tap's terms (the query interface and the price) — also free, and it signs nothing.
+      <b>(iv)</b> It opens a payment session on Tempo and asks its question, paying <i>rows&nbsp;&times;&nbsp;price</i>
+      through small signed vouchers — one per request, rather than a transaction each time.
+      <b>(v)</b> The server turns the request into a safe, parameterised database query (the agent never writes raw
+      queries) and returns exactly the rows asked for; an identical earlier question is answered from cache in
+      under a tenth of a second, without re-reading the source.
+      <b>(vi)</b> When the session closes, payment settles directly to the publisher. Aqueduct never holds the money.
+    </figcaption>
+  </figure>
+
+  <hr class="rule">
+  <p class="note">
+    Two separate jobs, one shared artifact. Building is a compile step that runs once; using is a fast,
+    deterministic, pay-as-you-go path that runs again and again — and the publisher is paid for each answer.
+  </p>
+
+</div>
+</body>
+</html>

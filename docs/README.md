@@ -16,10 +16,6 @@ reference behind it.
 | [mcp.md](./mcp.md) | The MCP server — discover/schema/query tools for any MCP agent over stdio |
 | [../DEPLOY.md](../DEPLOY.md) | Ship a Tap as a container — local docker-compose ↔ Akash |
 | [../DEMO.md](../DEMO.md) | The demo — same agent with vs without a Tap, on DOAJ's AI-walled journal corpus |
-| [demo-script.md](./demo-script.md) | The 3-minute video script + replay runbook for recording the demo |
-
-**The team's conclusions + market rationale** live in [`../knowledge/CONCLUSIONS.md`](../knowledge/CONCLUSIONS.md)
-(the full research history is archived locally, out of the published repo).
 
 ## The model in one paragraph
 

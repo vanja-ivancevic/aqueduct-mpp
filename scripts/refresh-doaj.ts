@@ -9,7 +9,7 @@
  * without touching DOAJ's origin. The builder owns the refresh (re-run this when a fresh CSV lands);
  * Aqueduct owns serving + metering + payment.
  *
- * Two steps, no LLM (CLAUDE.md invariant 1 — onboarding is deterministic here):
+ * Two steps, no LLM (onboarding is deterministic here):
  *   1. normalize  raw 52-column CSV → a clean, snake_case 24-column CSV snapshot
  *   2. onboard    deriveConfig() profiles the CSV → an eval-passed Tap config
  *
