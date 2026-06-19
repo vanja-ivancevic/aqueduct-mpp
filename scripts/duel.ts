@@ -178,18 +178,8 @@ async function main(): Promise<void> {
     `  ${green("✓")} Tap live on ${BASE} ${dim(`(${config.pricing.unitPrice} pathUSD/row)`)}`,
   );
 
-  const taskA =
-    `You are a monitoring agent. Report every earthquake worldwide with magnitude ${MAG} or greater ` +
-    `in the LAST 2 HOURS. For each: magnitude, place, time (UTC). Use real current data. Output a short ` +
-    `markdown table, or "none" if there are none. Be efficient — this exact task repeats every 2 hours.`;
-  const taskB =
-    `You are a monitoring agent. You have the Aqueduct skill and a live earthquake Tap at ${BASE}. ` +
-    `Report every earthquake worldwide with magnitude ${MAG} or greater in the LAST 2 HOURS (magnitude, ` +
-    `place, time UTC) as a short markdown table, or "none". Use ONLY the Tap:\n` +
-    `  1. read its schema:  npx tsx skills/aqueduct/query.ts ${BASE} --schema\n` +
-    `  2. form one constrained query (filter mag >= ${MAG} and time >= now-2h) and buy the rows:\n` +
-    `       npx tsx skills/aqueduct/query.ts ${BASE} '<request-json>'   (env AQUEDUCT_AGENT_KEY is set)\n` +
-    `  3. answer from the returned rows. This exact task repeats every 2 hours.`;
+  const taskA = `You are a monitoring agent. Report every earthquake worldwide with magnitude ${MAG} or greater in the LAST 2 HOURS. For each: magnitude, place, time (UTC). Use real current data. Output a short markdown table, or "none" if there are none. Be efficient — this exact task repeats every 2 hours.`;
+  const taskB = `You are a monitoring agent. You have the Aqueduct skill and a live earthquake Tap at ${BASE}. Report every earthquake worldwide with magnitude ${MAG} or greater in the LAST 2 HOURS (magnitude, place, time UTC) as a short markdown table, or "none". Use ONLY the Tap:\n  1. read its schema:  npx tsx skills/aqueduct/query.ts ${BASE} --schema\n  2. form one constrained query (filter mag >= ${MAG} and time >= now-2h) and buy the rows:\n       npx tsx skills/aqueduct/query.ts ${BASE} '<request-json>'   (env AQUEDUCT_AGENT_KEY is set)\n  3. answer from the returned rows. This exact task repeats every 2 hours.`;
 
   const a: Run[] = [];
   const b: Run[] = [];
@@ -248,8 +238,8 @@ async function main(): Promise<void> {
   console.log(
     green(
       bold(
-        `\n  ✓ Both are Claude Code. The agent without a Tap re-derives a brittle fetch every cycle;\n` +
-          `    with a Tap it forms one query, then the recurrence is a deterministic $0-LLM read.\n`,
+        "\n  ✓ Both are Claude Code. The agent without a Tap re-derives a brittle fetch every cycle;\n" +
+          "    with a Tap it forms one query, then the recurrence is a deterministic $0-LLM read.\n",
       ),
     ),
   );
