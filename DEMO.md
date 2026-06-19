@@ -1,99 +1,127 @@
 # Aqueduct — Live Demo Runbook
 
-> A raw CSV becomes a metered, agent-payable data feed — paid per row over MPP sessions, settled
-> on-chain on Tempo testnet. One command, ~60 seconds, real value moves.
+> Same agent, same task, with vs without Aqueduct. Two identical `claude` agents get one real research
+> question over the DOAJ open-access journal corpus. One has an Aqueduct Tap; one is on its own and runs
+> into the wall DOAJ put up to survive AI-crawler load. Same model, very different outcome — and nothing
+> is staged.
 
 ## TL;DR — run it
 
 ```bash
-npm install
-npx tsx scripts/demo.ts            # uses examples/cities.csv
-npx tsx scripts/demo.ts my.parquet # or any parquet / csv / json
+npm install && npm run build
+npm run demo            # one run: BUILD (onboard the CSV → Tap) → SERVE → RACE two live agents (~5 min)
+npm run demo:replay     # the recorded run as a narratable "movie" for a video (instant, repeatable)
 ```
 
-Needs only network access (it funds throwaway wallets from the public Tempo faucet). No keys, no
-config, no setup.
+`npm run demo` does the whole story end to end: it onboards `examples/doaj-journals.csv` into a metered
+Tap (deterministic, no LLM), serves it, then races two `claude` agents on it — **streaming each agent's
+verbose thinking + tool calls live** (plain, like the normal Claude Code CLI) and writing full
+transcripts to `recordings/with-aqueduct.log` and `recordings/on-its-own.log`.
+
+`npm run demo` needs network, the public Tempo faucet (it funds throwaway wallets — no keys, no
+config), and the `claude` CLI on PATH. Optional: set `AQUEDUCT_AGENT_KEY` to a funded key to skip the
+faucet. A build (`npm run build`) makes the MCP server available at `dist/mcp.js`.
 
 ## What the audience sees
 
-The script narrates four steps. Each line on screen maps to a claim in the pitch:
+The task is a real researcher's question — *shortlist diamond-OA (no-APC) Medicine journals, license
+CC BY, plagiarism-screened, peer review under 12 weeks, ranked by article output* — over the ~23,000
+journals DOAJ indexes. It needs the **whole corpus** to answer faithfully; you can't guess it.
 
 ```
- 1  COMPILE  — profile the file into a Tap config (deterministic, NO LLM)
-              schema + query interface + price derived from the data itself; evals 3/3 pass
- 2  SERVE    — start the Tap: free GET /schema, paid GET /query over MPP sessions
- 3  AGENT    — an agent discovers terms for free, then pays per row on one session channel
-              #1  cache miss → 200, rows=2, paid 0.0002 pathUSD
-              #2  same query → cache HIT, fresh voucher, cumulative grows
- 4  SETTLE   — close the channel; the cumulative voucher settles in ONE on-chain tx
-              prints the Tempo explorer link to the settlement transaction
+◀ WITH AQUEDUCT                           THE AGENT ON ITS OWN ▶
+answer:  Memorias do Inst. Oswaldo Cruz ✓ answer:  Pediatric Neurology Briefs   ✗ WRONG
+time:    56 s                             time:    285 s
+agent $: $0.28  (5 turns)                 agent $: $1.51  (26 turns)
+data:    one paid MPP query               data:    blocked at DOAJ (403)
+→ 5× faster · 5× cheaper · correct vs hallucinated ✓
+the Aqueduct agent paid per row over MPP, settled on-chain to the publisher's wallet
 ```
 
-The explorer link at the end is the proof: the agent paid the operator, peer-to-peer, on-chain.
+## The honest story (why this isn't a rigged benchmark)
 
-## What each step proves (the talking points)
+DOAJ is a small non-profit. In 2025 AI crawlers hit it so hard (a single day **+968%** over the prior
+year) that it moved its bulk CSV **and** its REST API behind Cloudflare. That wall now blocks
+legitimate AI agents too — verified live: every route an agent tries (`/csv`, `/api`, OAI-PMH,
+firecrawl, WebFetch) returns `403 "Just a moment…"`.
 
-| Step | On screen | The claim it backs |
-|------|-----------|--------------------|
-| **Compile** | `evals 3/3 passed (score 1.00)` | Any dataset → a working priced feed with **zero LLM** and zero hand-config. The query interface and golden tripwire are derived from the schema. |
-| **Serve** | `GET /schema (free)` | Agents discover terms (schema + price) before paying — the 402 "challenge" half of MPP. |
-| **Agent #1** | `cache miss → paid 0.0002` | Pay **per row** (2 rows × 0.0001), priced *before* the charge, gated by a Tempo session voucher. |
-| **Agent #2** | `cache HIT, cumulative=400` | The hot path: a repeat query serves from cache (no upstream, no DuckDB) yet still bills — this is the `<100ms` deterministic path and where margin lives. |
-| **Settle** | explorer tx link | **Non-custodial**: thousands of sub-cent vouchers settle as a single agent→operator transaction. We never touch funds. |
+So the "on its own" agent genuinely **cannot** get the data. Walled off, it thrashes for minutes and
+then guesses a plausible-sounding journal from training memory — and gets it **wrong**, because it
+never reached the corpus to rank against. The Aqueduct agent never touches DOAJ: it reads the Tap's
+schema, issues one constrained query, pays per row over MPP, and answers correctly.
+
+Two guards keep it honest:
+- **Each agent runs in an isolated scratch dir** — neither can read the repo's local copy of the data.
+  The only routes are the Tap (network) vs. the real, walled DOAJ (network).
+- **No outcome is hardcoded.** The panels render whatever the agents actually produce; the "blocked"
+  label is derived from the lone agent's real answer.
+
+## The builder side (one command)
+
+The supply side is the point. A builder downloads DOAJ's CSV once (past the wall, like a human), then:
+
+```bash
+npm run demo:refresh -- --unit-price 0.0005 --recipient 0xYourPayout
+# normalizing doaj_journalcsv_*.csv → examples/doaj-journals.parquet …
+#   wrote 22,940 journals
+# onboarding → examples/doaj-journals.tap.json  (deterministic, no LLM) …
+#   ✓ config written — 3/3 evals passed · price 0.0005/row → 0xYourPa…
+```
+
+That's the whole job — no server written, no pipeline to babysit. **The builder is the reseller:** they
+set their own per-row price (`--unit-price`) and payout wallet, and keep the margin above hosting cost —
+the data is free to them, the maintained *access* is the product. They serve it (`aqueduct serve`) and
+now have a metered, agent-payable API that offloads their origin and pays them per query. Settlement is
+agent→publisher on Tempo; Aqueduct never touches the funds. (The agent's model/compute cost is separate
+and its own — the data price is purely the builder's lever.)
+
+## Recording the video
+
+`npm run demo:replay` is a beat-by-beat *movie* of the real run (numbers are from real measured runs)
+that you pace to your narration:
+
+```bash
+npm run demo:replay                        # MANUAL — press SPACE to reveal each beat as you speak
+npm run demo:replay -- --auto              # AUTO   — self-advances on a ~2:45 timer
+npm run demo:replay -- --auto --speed 1.2  # AUTO, tuned faster
+```
+
+Manual keys: **SPACE/→** next · **b/←** redo · **q/Ctrl-C** quit. The grey `🎤 say` line is your cue.
+The full spoken script + recording tips: **[docs/demo-script.md](./docs/demo-script.md)**. Capture with
+`asciinema rec aqueduct.cast -c "npm run demo:replay -- --clean --auto"` or just screen-record a manual run.
 
 ## The architecture in one glance
 
 ```
-  raw file ──COMPILE (deterministic, no LLM)──▶ Tap config ──serve──▶ ┌─────────────────┐
-  (csv/parquet/json)                            (frozen, validated)    │   Tap server    │
-                                                                       │  GET /schema    │ free
-   agent ──MPP session──────────────────────────────────────────────▶ │  GET /query?q=  │ paid
-        voucher per request, settle once on-chain (Tempo)              └────────┬────────┘
-                                                                                │
-                                  planQuery (security perimeter) ──▶ DuckDB ──▶ rows
-                                  cache hit → no upstream, deterministic, <100ms
+  DOAJ CSV ──refresh (DuckDB normalize, no LLM)──▶ Tap config ──serve──▶ ┌─────────────────┐
+  (builder, once, past the wall)                   (frozen, validated)    │   Tap server    │
+                                                                          │  GET /schema    │ free
+   agent / app ──MPP session───────────────────────────────────────────▶ │  GET /query?q=  │ paid
+        voucher per request, settle once on-chain (Tempo)                 └────────┬────────┘
+                                                                                   │
+                                     planQuery (security perimeter) ──▶ DuckDB ──▶ rows
+                                     cache hit → no upstream, deterministic, <100ms
 ```
 
-- **No LLM in the request path.** The LLM (optional, `--refine`) runs only at compile time. The
-  runtime that answers a paid request is pure config execution + payment.
-- **The config is the single source of truth.** Frozen, versioned, validated by evals before it can
-  be served (`ValidatedConfig` — un-evaluated configs are a *type error*).
-- **Agents never send SQL.** A constrained query interface (declared filters/columns/sorts) compiles
-  to parameterized DuckDB SQL. Values stay data; they never become SQL.
-
-## If you want to drive it by hand
-
-```bash
-# 1. compile a file into a Tap config (deterministic). Writes cities.tap.json.
-npx aqueduct onboard examples/cities.csv --recipient 0xYourPayoutAddress
-
-# 2. serve it — the server wallet (receives settlement) comes from the env
-export AQUEDUCT_PRIVATE_KEY=0xYourServerWalletKey
-export AQUEDUCT_SECRET=$(openssl rand -hex 32)     # stable MPP challenge secret
-npx aqueduct serve cities.tap.json                 # listens on :8402 (override with --port)
-
-# 3. discover terms (free)
-curl localhost:8402/schema
-
-# 4. a paid query is GET /query?q=<base64url JSON> — the agent's MPP session manager handles
-#    the 402 → voucher → receipt automatically (see scripts/pay-smoke.ts for the client side).
-```
-
-> The server wallet must be funded with pathUSD on Tempo testnet to settle. To sponsor agents' gas
-> instead, set `AQUEDUCT_SPONSOR_KEY` to a *separate* funded wallet (it must differ from the server
-> wallet — Tempo rejects a sponsored tx whose fee-payer equals the sender).
+- **No LLM in the request path.** Onboarding (deterministic here) is the only compile step. The runtime
+  that answers a paid request is pure config execution + payment.
+- **The config is the single source of truth.** Frozen, versioned, validated by evals before it can be
+  served (`ValidatedConfig` — un-evaluated configs are a *type error*).
+- **Agents never send SQL.** A constrained query interface (declared filters/columns/sorts) compiles to
+  parameterized DuckDB SQL. Values stay data; they never become SQL.
 
 ## Troubleshooting
 
-- **"timed out funding …"** — the public faucet was slow/unreachable. Re-run; it's idempotent.
-- **Gas / "fee payer" errors** — the demo has the agent self-pay gas (the reliable path). Sponsored
-  gas needs a *distinct* funded sponsor wallet (`AQUEDUCT_SPONSOR_KEY`); a server can't sponsor its
-  own settlement (Tempo rejects fee-payer == sender).
-- **Port 8500 busy** — the demo's port is hard-coded; free it or kill the stale process.
+- **"faucet unavailable"** — the public Tempo faucet was slow/unreachable. Re-run; it's idempotent. The
+  comparison still prints; only the on-chain payment proof needs the faucet.
+- **`claude: command not found`** — the live `npm run demo` needs the `claude` CLI on PATH. (The
+  recorded `npm run demo:replay` does not.)
+- **Replay animation looks garbled** — you piped it; the typing reveal needs a real terminal (TTY).
 
 ## What's real vs. scoped for the hackathon
 
-- **Real:** deterministic compile, the constrained query path, the cache, per-row pricing, live MPP
-  sessions, on-chain settlement — all demonstrated end-to-end above.
+- **Real:** the Cloudflare wall (verified live), the deterministic refresh/onboard, the constrained
+  query path, the cache, per-row pricing, live MPP sessions, on-chain settlement, local ↔ Akash deploy,
+  the skill + MCP server — all end-to-end. The demo numbers are from real measured runs.
 - **MVP scope:** static structured files (parquet/csv/json) via DuckDB, acquired by a single GET or
   local path. Live APIs, SQL/scraped sources, and agentic ingestion of messy data are roadmap.

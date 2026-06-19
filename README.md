@@ -1,11 +1,17 @@
 # Aqueduct
 
-**Stripe for data → agents.** One command turns any dataset into a metered, agent-payable, discoverable
-API; one skill lets any agent buy from any Tap. Point Aqueduct at a parquet / CSV / JSON file and it
-produces a *Tap* — an HTTP service where AI agents pay per row over [MPP](https://mpp.dev) (the Machine
-Payments Protocol) on Tempo, via off-chain session vouchers settled on-chain. DuckDB + MPP are the
-engine; the **uniform interface** — publish with one command, consume any Tap with one skill — is the
-product. (Honest scope + where the value really is: [`knowledge/18`](./knowledge/18-market-precedent.md).)
+**A maintained data dependency for your app — or your agent.** One command turns any dataset into a
+*Tap*: a live, metered HTTP feed your app consumes in a few lines and **never maintains**. The
+publisher builds the pipeline *once* — fetch, normalize, keep-fresh, serve, meter — and everyone
+downstream just queries it, paying per row over [MPP](https://mpp.dev) (the Machine Payments Protocol)
+on Tempo, settled on-chain.
+
+The alternative is what every team does today: build, host, and *babysit* its own ingestion for the
+same public data — duplicated across every app that needs it, breaking whenever the source moves. A
+Tap collapses that to **build-the-pipeline-once-for-everyone**. App builders embed a data feature
+without owning a pipeline; agents consume the same feed the same way. DuckDB + MPP are the engine; the
+**maintained, uniform feed** is the product. (Honest scope — where this wins and where it's a wash:
+[`knowledge/CONCLUSIONS.md`](./knowledge/CONCLUSIONS.md).)
 
 ```
 npx aqueduct-mpp onboard data.parquet --recipient 0xYourPayout   # → data.tap.json
@@ -16,51 +22,68 @@ No LLM runs when an agent queries. Onboarding profiles the file and writes a fro
 config**; the runtime that serves paid requests is pure, deterministic config execution. That's what
 keeps it cheap (sub-cent per row) and fast (cached reads < 100 ms).
 
-## Watch it run
+## The demo — same agent, same task, with vs without Aqueduct
 
-A terminal recording of an LLM answering a natural-language question by buying *only the rows it
-needs* from a live Tap of NASA's exoplanet archive (~6,000 planets) — discover terms (free) → form a
-query → pay per row over MPP → settle on-chain → answer:
+Aqueduct doesn't answer questions; it gives an *agent* a clean data source. `npm run demo` gives one
+real research task to two identical `claude` agents and lets them work it:
 
-```
-asciinema play docs/aqueduct-ask.cast      # or: asciinema upload docs/aqueduct-ask.cast
-```
+- **With Aqueduct** — the agent has the Aqueduct MCP tools and queries a live, metered Tap over the
+  DOAJ open-access journal corpus (~23k journals), **paying per row over MPP from its own wallet**.
+- **On its own** — the same agent, no Aqueduct: told to acquire the data from DOAJ itself.
 
-Reproduce it live (Tempo testnet): `npx tsx scripts/ask.ts "your question"`. The agent uses the
-**`aqueduct` skill** (`skills/aqueduct/`) — a `SKILL.md` plus a paid-query tool — so any Claude Code
-agent can discover, query, and pay a Tap. The LLM is the *client*; it never sits in the serving path.
+The task is a real researcher's question — *shortlist diamond-OA (no-APC) Medicine journals with fast,
+plagiarism-screened peer review, ranked by output* — which needs the whole corpus to answer faithfully.
+The catch: DOAJ put its bulk CSV **and** its API behind Cloudflare in 2025 because AI crawlers
+overwhelmed it (traffic spiked **968%** over the prior year in a single day). So a headless agent gets a
+`403`. Measured result (`npm run demo`, real run):
 
-**The whole pitch in one run** — `npx tsx scripts/showcase.ts` brings up **three heterogeneous Taps**
-(space science · geophysics · forex) and has one agent buy from all three with the *same* `buyRows()`
-call — **zero bespoke integration per source**, three real on-chain settlements:
+| | With Aqueduct | On its own |
+|---|---|---|
+| answer | **correct** ✓ | **wrong** ✗ (guessed from memory) |
+| time | 56 s | 285 s |
+| agent cost | $0.28 | $1.51 |
+| data | one paid MPP query | blocked at the origin (403) |
 
-```
-✓ closest Earth-sized exoplanet: Proxima Cen b (1.30 pc)   — settled 0x9eb6…
-✓ strongest quake (24h):         M5.3 Izu Islands, Japan    — settled 0xbd9c…
-✓ today's USD→JPY rate:          160.93                     — settled 0xb061…
-  3 Taps · 0 integrations · 0.0003 pathUSD · 3 settlements on Tempo
-```
+Walled off, the lone agent burned 4.75 minutes and $1.51 to produce a confident *hallucination* — it
+never reached the data to rank against. The Aqueduct agent paid a fraction of a cent per row and
+answered correctly, while DOAJ's origin was never touched. Nothing is staged (each agent runs in an
+isolated dir so neither can read the repo's local copy); re-run it with `npm run demo`.
 
-That uniformity is the product: any dataset → one command → an agent-payable Tap; any agent → one skill
-→ buys from any Tap.
+**Record it.** `npm run demo:replay` plays the run back as a beat-by-beat "movie" you advance with the
+spacebar (or `--auto`), so the on-screen action tracks your narration — see
+[docs/demo-script.md](./docs/demo-script.md). The builder side is `scripts/refresh-doaj.ts`: a manually
+downloaded DOAJ CSV → one command → a metered Tap (22,940 journals, eval-gated, no LLM).
 
-## Example Taps & the comparison
+An agent reaches a Tap two ways: the **`aqueduct` skill** (`skills/aqueduct/`) or the **MCP server**
+(`npx aqueduct-mcp`, see [docs/mcp.md](./docs/mcp.md)) — discover Taps, read a schema for free, then
+pay per row. The LLM is always the *client*; it never sits in the serving path.
 
-A gallery of `examples/*.tap.json` over **fresh** public data — each a different reason an agent
-struggles, all served as one constrained query:
+## Why a Tap, not your own pipeline?
 
-| Tap | data | refresh | why a Tap beats fetching it ad-hoc |
-|---|---|---|---|
-| `exoplanets` | NASA Exoplanet Archive (live) | on query | hard to find/fetch (TAP + ADQL) |
-| `usgs-earthquakes` | USGS quake feed (live CSV) | ~60s | fresh — yesterday's copy is wrong |
-| `nasa-neo` | NASA near-Earth asteroids | daily | nested JSON, needs flattening |
-| `fx-rates` | ECB reference rates | daily | one canonical, sourced value |
-| `wiki-pageviews` | top Wikipedia articles | daily | nested JSON, vendor-curated |
+The data is public — so why a Tap instead of fetching it yourself? Two reasons, one per side of the
+market.
 
-`scripts/refresh-*.ts` are example **builder pipelines** (the updater Aqueduct doesn't own). Measured
-head-to-head (`scripts/bench-gallery.ts`, opus-4.8): the Tap data plane is **~1,800× cheaper** and
-8–5,780× faster than Claude Code fetching from scratch, at equal freshness — full table and the
-data-vendor framing in [`knowledge/17-gallery-comparison.md`](./knowledge/17-gallery-comparison.md).
+**For the agent / app:** fetching public data once is easy; *owning* it forever is not — and
+increasingly you can't even fetch it. The open databases agents depend on are buckling under AI-crawler
+load and shutting their doors: Cloudflare walls, proof-of-work firewalls, rate limits, outages. A Tap
+is a maintained, metered side-door — one query, pay per row, always fresh, nothing to host or babysit.
+
+**For the data publisher:** that crawler load is a cost with no revenue. A Tap turns it into a metered,
+agent-payable API in one command — the publisher builds the pipeline *once*, the origin is offloaded,
+and every paying agent funds the upkeep. The publisher is the reseller: they set the per-row price at
+onboard (`--unit-price`) and keep the margin above their hosting cost — the data is free to them, the
+*access* is the product. Settlement is agent→publisher on Tempo; Aqueduct is non-custodial and never
+touches the funds. (Note the two costs are separate: the agent's own model/compute spend is its own; the
+data payment is the publisher's per-row price.) Alchemy for the open-data long tail.
+
+(Honest scope: for a *static* file you fetch once and never refresh, DIY is fine — a Tap earns its keep
+on data that's **fresh, walled, normalized, or consumed by many**, where the maintenance and access
+never end. Full build-vs-buy case + the AI-crawler economics that motivate it: [`knowledge/CONCLUSIONS.md`](./knowledge/CONCLUSIONS.md)
+and the deep-research evidence in [`research/`](./research).)
+
+The demo Tap, `examples/doaj-journals.tap.json`, is a 22,940-journal slice of DOAJ compiled with
+`aqueduct onboard`. The container deploy path below bakes a different default dataset —
+`examples/exoplanets.csv`, NASA's Exoplanet Archive — and onboards it deterministically at boot.
 
 ## Install
 
@@ -113,7 +136,7 @@ renders the orchestrator manifest:
 docker build -t ghcr.io/you/aqueduct:1.0.0 .
 
 aqueduct deploy --target local --image ghcr.io/you/aqueduct:1.0.0   # → docker-compose.yml
-aqueduct deploy --target akash --image ghcr.io/you/aqueduct:1.0.0   # → akash.deploy.yaml (SSE-ready ingress)
+aqueduct deploy --target akash --image ghcr.io/you/aqueduct:1.0.0   # → akash.deploy.yaml (long-query ingress)
 ```
 
 Secrets are never baked — local interpolates them from your env, Akash takes them as manifest values you
@@ -176,10 +199,8 @@ requests on one session channel (cumulative vouchers, cache hit on repeats) → 
 a single on-chain settle at close. Ships as a stateless container that runs the same locally and on
 Akash ([DEPLOY.md](./DEPLOY.md)). Today's scope is **static structured files** (parquet / CSV / JSON).
 Known limits: a single in-process session store (multi-instance deploys need a shared store, on the
-roadmap), and volatile/live sources are roadmap. Per-row SSE streaming works end-to-end but is **opt-in**
-(`--stream`) — it needs two mppx SSE-metering fixes shipped as patches, and a mid-stream-disconnect close
-edge remains; see [docs/streaming.md](./docs/streaming.md). Fully-sponsored agent gas needs a separate
-sponsor wallet (`AQUEDUCT_SPONSOR_KEY`); without one, agents self-pay gas.
+roadmap), and volatile/live sources are roadmap. Fully-sponsored agent gas needs a separate sponsor
+wallet (`AQUEDUCT_SPONSOR_KEY`); without one, agents self-pay gas.
 
 ## Documentation
 
@@ -190,10 +211,11 @@ Reference docs live in [`docs/`](./docs/README.md):
 - [Query interface](./docs/query.md) — the agent request shape + why agents never send SQL
 - [Pricing & billing](./docs/pricing.md) — `rows × unitPrice` over an MPP session
 - [Discovery & consumption](./docs/discovery.md) — find/buy Taps via MPP's registry, the skill, the MCP server
-- [Streaming](./docs/streaming.md) — per-row metered SSE, settled on-chain (opt-in `--stream`)
-- [Deploy](./DEPLOY.md) — ship a Tap local ↔ Akash · [Demo](./DEMO.md) — the live LLM-buys-data run
+- [MCP server](./docs/mcp.md) — expose discover/schema/query to any MCP agent over stdio (`npx aqueduct-mcp`)
+- [Deploy](./DEPLOY.md) — ship a Tap local ↔ Akash · [Demo](./DEMO.md) — same agent with vs without a Tap (DOAJ) · [Demo script](./docs/demo-script.md) — the 3-min video runbook
 
-Design docs (the *why*) are in [`knowledge/`](./knowledge/00-index.md).
+The team's conclusions + market rationale are in [`knowledge/CONCLUSIONS.md`](./knowledge/CONCLUSIONS.md)
+(full research history archived locally, out of the published repo).
 
 ## Links
 

@@ -8,6 +8,3 @@ export const PATH_USD = "0x20c0000000000000000000000000000000000000";
 
 /** Default JSON-RPC endpoint for Tempo Moderato. */
 export const DEFAULT_RPC_URL = "https://rpc.moderato.tempo.xyz";
-
-/** Block explorer base — settlement txs link to `${EXPLORER_URL}/tx/<ref>`. */
-export const EXPLORER_URL = "https://explore.testnet.tempo.xyz";

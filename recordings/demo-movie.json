@@ -1,0 +1,179 @@
+{
+  "meta": {
+    "title": "Aqueduct — a maintained data dependency for agents",
+    "target": "2:45",
+    "source": "real measured runs, 2026-06-19 (scripts/demo.ts + scripts/refresh-doaj.ts)",
+    "note": "Numbers are from real runs. Re-capture anytime with `npx tsx scripts/demo.ts`."
+  },
+  "scenes": [
+    {
+      "act": "1 · the problem",
+      "rule": "THE OPEN WEB IS UNDER SIEGE",
+      "narration": "The open web runs on a quiet army of free databases. DOAJ — the Directory of Open Access Journals — indexes twenty-three thousand of them. It's a small non-profit.",
+      "render": [
+        { "text": "DOAJ — Directory of Open Access Journals", "style": "bold" },
+        {
+          "text": "  22,940 journals · journal-level metadata · run by a non-profit, on donations",
+          "style": "dim"
+        }
+      ],
+      "hold": 9
+    },
+    {
+      "narration": "In 2025, AI crawlers hammered it so hard — traffic up nine hundred and sixty-eight percent in a single day — that it had to hide behind a wall. The problem: that wall now blocks legitimate AI agents too.",
+      "render": [
+        {
+          "text": "  2025: AI-crawler traffic +968% in one day → servers buckling",
+          "style": "yellow"
+        },
+        { "text": "  DOAJ's response: put the data behind Cloudflare", "style": "dim" }
+      ],
+      "hold": 11
+    },
+    {
+      "narration": "Watch. An agent asks DOAJ for the data directly, and gets a 403. The door is closing on the very people open data was meant to serve.",
+      "render": [
+        { "text": "$ curl https://doaj.org/csv", "style": "cmd", "type": true },
+        {
+          "text": "HTTP 403  <!DOCTYPE html><title>Just a moment...</title>  (Cloudflare)",
+          "style": "red"
+        }
+      ],
+      "hold": 9
+    },
+    {
+      "act": "2 · the builder",
+      "rule": "THE BUILDER SIDE — ONE COMMAND",
+      "narration": "Aqueduct fixes this from the supply side. The builder downloads the data once — past the wall, like a human would — and runs a single command.",
+      "render": [
+        {
+          "text": "$ npx aqueduct onboard doaj-journals.csv --recipient 0xPayout",
+          "style": "cmd",
+          "type": true
+        }
+      ],
+      "hold": 8
+    },
+    {
+      "narration": "It profiles the file, builds a safe query interface, and runs an eval gate — no model, fully deterministic. Twenty-three thousand journals become a Tap.",
+      "render": [
+        {
+          "text": "normalizing doaj_journalcsv_20260519.csv → doaj-journals.parquet …",
+          "style": "dim",
+          "type": true
+        },
+        { "text": "  wrote 22,940 journals", "style": "plain" },
+        {
+          "text": "onboarding → doaj-journals.tap.json  (deterministic, no LLM) …",
+          "style": "dim",
+          "type": true
+        },
+        { "text": "  ✓ config written — 3/3 evals passed", "style": "green" }
+      ],
+      "hold": 10
+    },
+    {
+      "narration": "That's the whole job. No server to write, no pipeline to babysit. They serve it — and now they have a metered, agent-payable API that takes the load off their origin and pays them per query.",
+      "render": [
+        { "text": "$ aqueduct serve doaj-journals.tap.json", "style": "cmd", "type": true },
+        { "text": "  Tap live on :8402", "style": "green" },
+        { "text": "  GET /schema   free   · 24 queryable fields", "style": "plain" },
+        { "text": "  GET /query    paid   · $0.0001 / row, settled on Tempo", "style": "plain" }
+      ],
+      "hold": 11
+    },
+    {
+      "act": "3 · the race",
+      "rule": "SAME TASK, SAME MODEL — WITH vs WITHOUT AQUEDUCT",
+      "narration": "Now the payoff. Same question, same model, two agents. A researcher's question: find a free, fast, peer-reviewed medical journal to publish in. One agent has the Aqueduct Tap. The other is on its own.",
+      "render": [
+        {
+          "text": "TASK  diamond-OA (no-APC) Medicine journals, CC BY, plagiarism-screened,",
+          "style": "bold"
+        },
+        {
+          "text": "      <12-week review — ranked by output. Needs the whole 23k corpus.",
+          "style": "dim"
+        }
+      ],
+      "hold": 11
+    },
+    {
+      "narration": "On its own, the agent runs straight into the wall. The bulk CSV — blocked. The API — blocked. It tries the harvesting endpoint, a scraping tool, a web fetch...",
+      "render": [
+        { "text": "▶ AGENT ON ITS OWN", "style": "yellow" },
+        { "text": "  curl doaj.org/csv ............... 403 blocked", "style": "red", "type": true },
+        { "text": "  curl doaj.org/api/v3 ........... 403 blocked", "style": "red", "type": true },
+        { "text": "  OAI-PMH harvest ............... 403 blocked", "style": "red", "type": true },
+        {
+          "text": "  firecrawl scrape .............. document_antibot",
+          "style": "red",
+          "type": true
+        },
+        { "text": "  WebFetch ...................... 403 Forbidden", "style": "red", "type": true }
+      ],
+      "hold": 12
+    },
+    {
+      "narration": "Every door is shut. After four and a half minutes, twenty-six turns, and a dollar fifty of compute, it gives up and guesses from memory. And the answer is wrong.",
+      "render": [
+        { "text": "  → guessed from training memory:", "style": "dim" },
+        { "text": "  answer:  Pediatric Neurology Briefs        ✗ WRONG", "style": "red" },
+        {
+          "text": "  time: 285s   ·   cost: $1.51   ·   26 turns   ·   data: BLOCKED",
+          "style": "yellow"
+        }
+      ],
+      "hold": 11
+    },
+    {
+      "narration": "The Aqueduct agent never touches DOAJ. It reads the Tap's schema, writes one constrained query, pays a fraction of a cent per row over MPP, and answers correctly — in under a minute.",
+      "render": [
+        { "text": "◀ WITH AQUEDUCT", "style": "cyan" },
+        { "text": "  aqueduct_schema ............... 24 fields", "style": "green", "type": true },
+        { "text": "  aqueduct_query  (1 paid query) . 5 rows", "style": "green", "type": true },
+        { "text": "  answer:  Memorias do Instituto Oswaldo Cruz   ✓ CORRECT", "style": "green" },
+        {
+          "text": "  time: 56s    ·   cost: $0.28   ·   5 turns    ·   data: paid per row (MPP)",
+          "style": "cyan"
+        }
+      ],
+      "hold": 12
+    },
+    {
+      "rule": "RESULT",
+      "narration": "Five times faster. Five times cheaper. And the difference between a correct answer and a confident hallucination — decided entirely by whether the agent could reach clean, complete data.",
+      "render": [
+        { "text": "            WITH AQUEDUCT          ON ITS OWN", "style": "bold" },
+        { "text": "  answer    correct  ✓             wrong  ✗", "style": "plain" },
+        { "text": "  time      56 s                   285 s", "style": "plain" },
+        { "text": "  agent $   $0.28                  $1.51   (model compute)", "style": "plain" },
+        { "text": "  data      one paid MPP query     blocked at the origin", "style": "plain" }
+      ],
+      "hold": 11
+    },
+    {
+      "act": "4 · the close",
+      "rule": "WHAT AQUEDUCT IS",
+      "narration": "Here's the trick: we don't sell the data. The data is free. We sell never having to host it, refresh it, or get crushed by it — and a metered side-door that pays the operator while serving the agent.",
+      "render": [
+        { "text": "  the data is free — we sell maintained, metered ACCESS", "style": "bold" },
+        { "text": "  operator: paid per query + origin offloaded", "style": "dim" },
+        { "text": "  agent: clean, complete, fresh data — one query, pay per row", "style": "dim" }
+      ],
+      "hold": 11
+    },
+    {
+      "narration": "Alchemy for the open-data long tail. Paid per query, agent-native, settled on Tempo. Aqueduct.",
+      "render": [
+        { "text": "  AQUEDUCT", "style": "cyan" },
+        { "text": "  a maintained data dependency for apps and agents", "style": "bold" },
+        {
+          "text": "  · npx aqueduct onboard · pay per row over MPP · non-custodial on Tempo",
+          "style": "dim"
+        }
+      ],
+      "hold": 9
+    }
+  ]
+}

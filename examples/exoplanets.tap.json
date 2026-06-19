@@ -5,7 +5,7 @@
     "format": "csv",
     "location": {
       "via": "url",
-      "ref": "https://exoplanetarchive.ipac.caltech.edu/TAP/sync?query=SELECT%20pl_name%20as%20name%2C%20hostname%20as%20host_star%2C%20CAST%28disc_year%20AS%20INTEGER%29%20as%20discovery_year%2C%20discoverymethod%20as%20method%2C%20sy_dist%20as%20distance_pc%2C%20pl_orbper%20as%20period_days%2C%20pl_rade%20as%20radius_earth%2C%20pl_bmasse%20as%20mass_earth%2C%20pl_eqt%20as%20eq_temp_k%20FROM%20pscomppars%20WHERE%20pl_rade%20is%20not%20null%20and%20sy_dist%20is%20not%20null&format=csv"
+      "ref": "https://exoplanetarchive.ipac.caltech.edu/TAP/sync?query=SELECT%20pl_name%20as%20name%2C%20hostname%20as%20host_star%2C%20CAST(disc_year%20AS%20INTEGER)%20as%20discovery_year%2C%20discoverymethod%20as%20method%2C%20sy_dist%20as%20distance_pc%2C%20pl_orbper%20as%20period_days%2C%20pl_rade%20as%20radius_earth%2C%20pl_bmasse%20as%20mass_earth%2C%20pl_bmassprov%20as%20mass_provenance%2C%20pl_eqt%20as%20eq_temp_k%2C%20pl_insol%20as%20insolation_earth%2C%20st_teff%20as%20star_teff_k%2C%20st_rad%20as%20star_radius_solar%2C%20st_mass%20as%20star_mass_solar%2C%20st_spectype%20as%20star_spectral_type%20FROM%20pscomppars%20WHERE%20pl_rade%20is%20not%20null%20and%20sy_dist%20is%20not%20null&format=csv"
     },
     "authEnv": null,
     "contract": {
@@ -55,8 +55,38 @@
       "required": false
     },
     {
+      "name": "mass_provenance",
+      "type": "string",
+      "required": false
+    },
+    {
       "name": "eq_temp_k",
       "type": "number",
+      "required": false
+    },
+    {
+      "name": "insolation_earth",
+      "type": "number",
+      "required": false
+    },
+    {
+      "name": "star_teff_k",
+      "type": "number",
+      "required": false
+    },
+    {
+      "name": "star_radius_solar",
+      "type": "number",
+      "required": false
+    },
+    {
+      "name": "star_mass_solar",
+      "type": "number",
+      "required": false
+    },
+    {
+      "name": "star_spectral_type",
+      "type": "string",
       "required": false
     }
   ],
@@ -64,39 +94,168 @@
     "filters": [
       {
         "field": "name",
-        "ops": ["eq", "ne", "in", "like"]
+        "ops": [
+          "eq",
+          "ne",
+          "in",
+          "like"
+        ]
       },
       {
         "field": "host_star",
-        "ops": ["eq", "ne", "in", "like"]
+        "ops": [
+          "eq",
+          "ne",
+          "in",
+          "like"
+        ]
       },
       {
         "field": "discovery_year",
-        "ops": ["eq", "ne", "lt", "lte", "gt", "gte", "in"]
+        "ops": [
+          "eq",
+          "ne",
+          "lt",
+          "lte",
+          "gt",
+          "gte",
+          "in"
+        ]
       },
       {
         "field": "method",
-        "ops": ["eq", "ne", "in", "like"]
+        "ops": [
+          "eq",
+          "ne",
+          "in",
+          "like"
+        ]
       },
       {
         "field": "distance_pc",
-        "ops": ["eq", "ne", "lt", "lte", "gt", "gte", "in"]
+        "ops": [
+          "eq",
+          "ne",
+          "lt",
+          "lte",
+          "gt",
+          "gte",
+          "in"
+        ]
       },
       {
         "field": "period_days",
-        "ops": ["eq", "ne", "lt", "lte", "gt", "gte", "in"]
+        "ops": [
+          "eq",
+          "ne",
+          "lt",
+          "lte",
+          "gt",
+          "gte",
+          "in"
+        ]
       },
       {
         "field": "radius_earth",
-        "ops": ["eq", "ne", "lt", "lte", "gt", "gte", "in"]
+        "ops": [
+          "eq",
+          "ne",
+          "lt",
+          "lte",
+          "gt",
+          "gte",
+          "in"
+        ]
       },
       {
         "field": "mass_earth",
-        "ops": ["eq", "ne", "lt", "lte", "gt", "gte", "in"]
+        "ops": [
+          "eq",
+          "ne",
+          "lt",
+          "lte",
+          "gt",
+          "gte",
+          "in"
+        ]
+      },
+      {
+        "field": "mass_provenance",
+        "ops": [
+          "eq",
+          "ne",
+          "in",
+          "like"
+        ]
       },
       {
         "field": "eq_temp_k",
-        "ops": ["eq", "ne", "lt", "lte", "gt", "gte", "in"]
+        "ops": [
+          "eq",
+          "ne",
+          "lt",
+          "lte",
+          "gt",
+          "gte",
+          "in"
+        ]
+      },
+      {
+        "field": "insolation_earth",
+        "ops": [
+          "eq",
+          "ne",
+          "lt",
+          "lte",
+          "gt",
+          "gte",
+          "in"
+        ]
+      },
+      {
+        "field": "star_teff_k",
+        "ops": [
+          "eq",
+          "ne",
+          "lt",
+          "lte",
+          "gt",
+          "gte",
+          "in"
+        ]
+      },
+      {
+        "field": "star_radius_solar",
+        "ops": [
+          "eq",
+          "ne",
+          "lt",
+          "lte",
+          "gt",
+          "gte",
+          "in"
+        ]
+      },
+      {
+        "field": "star_mass_solar",
+        "ops": [
+          "eq",
+          "ne",
+          "lt",
+          "lte",
+          "gt",
+          "gte",
+          "in"
+        ]
+      },
+      {
+        "field": "star_spectral_type",
+        "ops": [
+          "eq",
+          "ne",
+          "in",
+          "like"
+        ]
       }
     ],
     "selectable": "*",
@@ -109,7 +268,13 @@
       "period_days",
       "radius_earth",
       "mass_earth",
-      "eq_temp_k"
+      "mass_provenance",
+      "eq_temp_k",
+      "insolation_earth",
+      "star_teff_k",
+      "star_radius_solar",
+      "star_mass_solar",
+      "star_spectral_type"
     ],
     "maxLimit": 1000,
     "defaultLimit": 100

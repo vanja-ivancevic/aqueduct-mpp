@@ -13,12 +13,13 @@ reference behind it.
 | [query.md](./query.md) | The agent request shape and the constrained query interface (why agents never send SQL) |
 | [pricing.md](./pricing.md) | How a request is priced and billed over an MPP session |
 | [discovery.md](./discovery.md) | Finding & consuming Taps — `register`, the skill, the MCP server (no directory of our own) |
-| [streaming.md](./streaming.md) | Per-row pay-as-you-consume SSE streaming (**experimental**, opt-in via `--stream`) |
+| [mcp.md](./mcp.md) | The MCP server — discover/schema/query tools for any MCP agent over stdio |
 | [../DEPLOY.md](../DEPLOY.md) | Ship a Tap as a container — local docker-compose ↔ Akash |
-| [../DEMO.md](../DEMO.md) | The live LLM-buys-data demo on NASA's exoplanet archive |
+| [../DEMO.md](../DEMO.md) | The demo — same agent with vs without a Tap, on DOAJ's AI-walled journal corpus |
+| [demo-script.md](./demo-script.md) | The 3-minute video script + replay runbook for recording the demo |
 
-**Design docs** (the *why*, for contributors) live in [`../knowledge/`](../knowledge/00-index.md):
-architecture (`08`), correctness & evals (`10`), Tempo testnet setup (`09`).
+**The team's conclusions + market rationale** live in [`../knowledge/CONCLUSIONS.md`](../knowledge/CONCLUSIONS.md)
+(the full research history is archived locally, out of the published repo).
 
 ## The model in one paragraph
 

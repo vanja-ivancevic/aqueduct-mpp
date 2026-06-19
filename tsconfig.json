@@ -9,5 +9,5 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["core", "adapters", "onboard", "runtime", "evals", "cli"]
+  "include": ["core", "adapters", "onboard", "runtime", "evals", "cli", "mcp"]
 }

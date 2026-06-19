@@ -13,7 +13,6 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { basename, extname, resolve } from "node:path";
 import { serve } from "@hono/node-server";
 import { privateKeyToAccount } from "viem/accounts";
-import { runMcpServer } from "../adapters/client/mcp";
 import { akashCompute } from "../adapters/compute/akash";
 import { localCompute } from "../adapters/compute/local";
 import { DEFAULT_SPEC, type DeploySpec } from "../adapters/compute/provider";
@@ -26,7 +25,6 @@ import { validate } from "../core/evals";
 import { type OnboardInput, onboard } from "../core/onboard";
 import { renderServiceEntry } from "../core/registry";
 import { createTapServer } from "../runtime/server";
-import { mountStreamRoute } from "../runtime/stream";
 
 async function main(argv: string[]): Promise<number> {
   const [cmd, ...rest] = argv;
@@ -39,8 +37,6 @@ async function main(argv: string[]): Promise<number> {
       return cmdDeploy(rest);
     case "register":
       return cmdRegister(rest);
-    case "mcp":
-      return cmdMcp();
     case undefined:
     case "-h":
     case "--help":
@@ -189,10 +185,6 @@ async function cmdServe(args: string[]): Promise<number> {
   };
   const app = createTapServer(gate.config, engine, serverOpts);
 
-  // Experimental: pay-as-you-consume row streaming over MPP SSE. Additive route, opt-in.
-  const streaming = flags.get("stream") !== undefined;
-  if (streaming) mountStreamRoute(app, gate.config, engine, serverOpts);
-
   const port = Number(flags.get("port") ?? process.env.PORT ?? 8402);
   serve({ fetch: app.fetch, port });
   console.error(`▸ Tap '${gate.config.name}' live on :${port}`);
@@ -201,10 +193,6 @@ async function cmdServe(args: string[]): Promise<number> {
     `  GET  /query?q=<base64url> (paid)   ${gate.config.pricing.unitPrice}/${gate.config.pricing.unit} over MPP sessions`,
   );
   console.error("  POST /query              (paid)   MPP session channel lifecycle");
-  if (streaming)
-    console.error(
-      `  GET  /query/stream       (paid)   per-row SSE, ${gate.config.pricing.unitPrice}/${gate.config.pricing.unit} pay-as-consumed (experimental)`,
-    );
   console.error(`  wallet ${account.address} receives settlement`);
   await new Promise<never>(() => {}); // run until killed; never resolve so main() doesn't exit
   return 0; // unreachable
@@ -286,13 +274,6 @@ async function cmdRegister(args: string[]): Promise<number> {
   return 0;
 }
 
-// ── mcp: serve the consumption client (discover/schema/query) over MCP stdio ───
-async function cmdMcp(): Promise<number> {
-  runMcpServer();
-  await new Promise<never>(() => {}); // run until stdin closes / process is killed
-  return 0; // unreachable
-}
-
 // ── tiny arg parser (no dep) ─────────────────────────────────────────────────
 type Flags = { _: string[]; get(key: string): string | undefined };
 function parseFlags(args: string[]): Flags {
@@ -332,7 +313,6 @@ commands:
   serve   <config>    run the Tap: free /schema, paid /query over MPP sessions
   deploy              render a deployment manifest (local docker-compose or Akash SDL)
   register <config>   render the MPP registry entry to publish a deployed Tap (--url)
-  mcp                 serve the consumption client (discover/schema/query) over MCP stdio
 
 onboard flags:
   --name <n>          Tap name (default: derived from filename)
@@ -346,7 +326,6 @@ onboard flags:
 
 serve flags:
   --port <n>          listen port (default: 8402)
-  --stream            also mount GET /query/stream — per-row pay-as-consumed SSE (experimental)
   env AQUEDUCT_PRIVATE_KEY   server wallet key (required)
   env AQUEDUCT_RPC_URL       Tempo RPC (default: moderato testnet)`);
 }

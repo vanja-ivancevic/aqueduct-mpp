@@ -10,10 +10,25 @@ dist/
 
 # OS / editor
 .DS_Store
+._*
 .vscode/
+
+# Builder's raw downloaded source files — large, regenerate by downloading from the source.
+# The served artifact (examples/doaj-journals.csv) + its Tap config are committed; the raw dump is not.
+examples/doaj_journalcsv_*.csv
+
+# asciinema screen recordings (generate locally from `npm run demo:replay`)
+*.cast
+
+# Live agent run transcripts dumped by `npm run demo` (the movie fixture stays tracked)
+recordings/*.log
+recordings/*.jsonl
 
 # Research scratch + generated Tap configs (per-builder artifacts)
 .firecrawl/
 *.tap.json
 # …except the example gallery Taps — committed demo fixtures the demos load at runtime.
 !examples/*.tap.json
+
+# Archived research + retired demos/scripts (kept locally, out of the published repo)
+/archive/

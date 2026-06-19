@@ -3,9 +3,9 @@
  * decentralized compute marketplace. Same image as local; the only differences are the orchestrator
  * and that the externally exposed port goes through Akash's HTTP ingress.
  *
- * Streaming-ready: Akash's ingress (NGINX) cuts idle connections at a 60s default — fatal for SSE. We
- * raise `read_timeout`/`send_timeout` and set `next_cases: ["off"]` so long-lived streams survive (the
- * server must still emit bytes — data rows or `:` keepalive comments — to keep the connection warm).
+ * Long-query-ready: Akash's ingress (NGINX) cuts idle connections at a 60s default, which would drop a
+ * slow cache-miss query whose upstream is still responding. We raise `read_timeout`/`send_timeout` and
+ * set `next_cases: ["off"]` so a long query survives.
  *
  * The container is STATELESS: it onboards a baked dataset deterministically at boot and serves it, so
  * there's no persistent volume (Akash storage is only lease-scoped anyway). Bigger snapshots ship in
@@ -35,7 +35,7 @@ services:
         to:
           - global: true
         http_options:
-          read_timeout: 3600000                   # SSE-ready: don't cut long streams at the 60s default
+          read_timeout: 3600000                   # don't cut a long cache-miss query at the 60s default
           send_timeout: 3600000
           next_cases: ["off"]
 profiles:
@@ -69,7 +69,7 @@ deployment:
         "provider services akash, or Cloudmos/Console: create deployment from akash.deploy.yaml",
         "CLI: akash tx deployment create akash.deploy.yaml --from <key>  →  create-lease  →  send-manifest",
         "get the URL: akash provider lease-status … (the global:true host) → GET <host>/schema",
-        "SSE note: expose a non-80/443 port (raw NodePort) to skip ingress entirely if streams stall",
+        "long-query note: expose a non-80/443 port (raw NodePort) to skip ingress entirely if connections stall",
       ],
     };
   },

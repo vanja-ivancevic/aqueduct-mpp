@@ -58,7 +58,7 @@ AQUEDUCT_AGENT_KEY=0x… npx tsx skills/aqueduct/query.ts <tapUrl> '{"filters":[
 
 ### Via the MCP server
 
-`aqueduct mcp` runs an MCP **stdio** server exposing the same ops as tools — `aqueduct_discover`,
+`npx aqueduct-mcp` runs an MCP **stdio** server exposing the same ops as tools — `aqueduct_discover`,
 `aqueduct_schema`, `aqueduct_query` — for any MCP-native host (Claude Desktop, Cursor, …). Run it
 locally with your own wallet:
 
@@ -67,8 +67,8 @@ locally with your own wallet:
 {
   "mcpServers": {
     "aqueduct": {
-      "command": "aqueduct",
-      "args": ["mcp"],
+      "command": "npx",
+      "args": ["aqueduct-mcp"],
       "env": { "AQUEDUCT_AGENT_KEY": "0x<funded-tempo-key>" }
     }
   }

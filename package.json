@@ -13,13 +13,15 @@
     "data-api",
     "micropayments"
   ],
-  "homepage": "https://github.com/your-org/aqueduct#readme",
+  "homepage": "https://github.com/vanja-ivancevic/aqueduct-mpp#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/your-org/aqueduct.git"
+    "url": "git+https://github.com/vanja-ivancevic/aqueduct-mpp.git"
   },
   "bin": {
-    "aqueduct": "dist/cli.js"
+    "aqueduct": "dist/cli.js",
+    "aqueduct-mpp": "dist/cli.js",
+    "aqueduct-mcp": "dist/mcp.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -44,6 +46,10 @@
     "postinstall": "patch-package",
     "build": "tsup",
     "aqueduct": "tsx cli/index.ts",
+    "aqueduct-mcp": "tsx mcp/server.ts",
+    "demo": "tsx scripts/demo.ts",
+    "demo:refresh": "tsx scripts/refresh-doaj.ts",
+    "demo:replay": "tsx scripts/replay.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",
@@ -51,6 +57,7 @@
   },
   "dependencies": {
     "@duckdb/node-api": "1.5.3-r.3",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@hono/node-server": "^1.19.14",
     "hono": "^4.12.25",
     "mppx": "^0.7.0",

@@ -60,19 +60,10 @@ export {
 } from "./adapters/compute/provider";
 
 // consumption client — the agent's three read ops (skill + MCP wrap these)
-export {
-  discover,
-  fetchSchema,
-  buyRows,
-  streamRows,
-  type BuyResult,
-  type StreamRow,
-} from "./adapters/client/client";
-export { runMcpServer } from "./adapters/client/mcp";
+export { discover, fetchSchema, buyRows, type BuyResult } from "./adapters/client/client";
 
 // runtime — the hot path
 export { createTapServer, type TapServerOptions } from "./runtime/server";
-export { mountStreamRoute, type StreamRouteOptions } from "./runtime/stream";
 export {
   memoryCache,
   cacheKey,

@@ -1,0 +1,418 @@
+{
+  "version": 1,
+  "name": "doaj-journals",
+  "source": {
+    "format": "csv",
+    "location": {
+      "via": "path",
+      "ref": "examples/doaj-journals.csv"
+    },
+    "authEnv": null,
+    "contract": {
+      "determinism": "deterministic",
+      "freshnessWindow": "24h"
+    }
+  },
+  "schema": [
+    {
+      "name": "title",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "issn",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "issn_print",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "alt_title",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "publisher",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "publisher_country",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "languages",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "subjects",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "lcc_codes",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "keywords",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "license",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "license_attributes",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "has_apc",
+      "type": "boolean",
+      "required": false
+    },
+    {
+      "name": "apc_amount",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "oa_start_year",
+      "type": "integer",
+      "required": false
+    },
+    {
+      "name": "review_process",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "plagiarism_screening",
+      "type": "boolean",
+      "required": false
+    },
+    {
+      "name": "weeks_to_publication",
+      "type": "integer",
+      "required": false
+    },
+    {
+      "name": "has_waiver",
+      "type": "boolean",
+      "required": false
+    },
+    {
+      "name": "preservation",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "persistent_article_ids",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "doaj_oa_compliant",
+      "type": "boolean",
+      "required": false
+    },
+    {
+      "name": "article_records",
+      "type": "integer",
+      "required": false
+    },
+    {
+      "name": "last_updated",
+      "type": "timestamp",
+      "required": false
+    }
+  ],
+  "query": {
+    "filters": [
+      {
+        "field": "title",
+        "ops": [
+          "eq",
+          "ne",
+          "in",
+          "like"
+        ]
+      },
+      {
+        "field": "issn",
+        "ops": [
+          "eq",
+          "ne",
+          "in",
+          "like"
+        ]
+      },
+      {
+        "field": "issn_print",
+        "ops": [
+          "eq",
+          "ne",
+          "in",
+          "like"
+        ]
+      },
+      {
+        "field": "alt_title",
+        "ops": [
+          "eq",
+          "ne",
+          "in",
+          "like"
+        ]
+      },
+      {
+        "field": "publisher",
+        "ops": [
+          "eq",
+          "ne",
+          "in",
+          "like"
+        ]
+      },
+      {
+        "field": "publisher_country",
+        "ops": [
+          "eq",
+          "ne",
+          "in",
+          "like"
+        ]
+      },
+      {
+        "field": "languages",
+        "ops": [
+          "eq",
+          "ne",
+          "in",
+          "like"
+        ]
+      },
+      {
+        "field": "subjects",
+        "ops": [
+          "eq",
+          "ne",
+          "in",
+          "like"
+        ]
+      },
+      {
+        "field": "lcc_codes",
+        "ops": [
+          "eq",
+          "ne",
+          "in",
+          "like"
+        ]
+      },
+      {
+        "field": "keywords",
+        "ops": [
+          "eq",
+          "ne",
+          "in",
+          "like"
+        ]
+      },
+      {
+        "field": "license",
+        "ops": [
+          "eq",
+          "ne",
+          "in",
+          "like"
+        ]
+      },
+      {
+        "field": "license_attributes",
+        "ops": [
+          "eq",
+          "ne",
+          "in",
+          "like"
+        ]
+      },
+      {
+        "field": "has_apc",
+        "ops": [
+          "eq",
+          "ne"
+        ]
+      },
+      {
+        "field": "apc_amount",
+        "ops": [
+          "eq",
+          "ne",
+          "in",
+          "like"
+        ]
+      },
+      {
+        "field": "oa_start_year",
+        "ops": [
+          "eq",
+          "ne",
+          "lt",
+          "lte",
+          "gt",
+          "gte",
+          "in"
+        ]
+      },
+      {
+        "field": "review_process",
+        "ops": [
+          "eq",
+          "ne",
+          "in",
+          "like"
+        ]
+      },
+      {
+        "field": "plagiarism_screening",
+        "ops": [
+          "eq",
+          "ne"
+        ]
+      },
+      {
+        "field": "weeks_to_publication",
+        "ops": [
+          "eq",
+          "ne",
+          "lt",
+          "lte",
+          "gt",
+          "gte",
+          "in"
+        ]
+      },
+      {
+        "field": "has_waiver",
+        "ops": [
+          "eq",
+          "ne"
+        ]
+      },
+      {
+        "field": "preservation",
+        "ops": [
+          "eq",
+          "ne",
+          "in",
+          "like"
+        ]
+      },
+      {
+        "field": "persistent_article_ids",
+        "ops": [
+          "eq",
+          "ne",
+          "in",
+          "like"
+        ]
+      },
+      {
+        "field": "doaj_oa_compliant",
+        "ops": [
+          "eq",
+          "ne"
+        ]
+      },
+      {
+        "field": "article_records",
+        "ops": [
+          "eq",
+          "ne",
+          "lt",
+          "lte",
+          "gt",
+          "gte",
+          "in"
+        ]
+      },
+      {
+        "field": "last_updated",
+        "ops": [
+          "eq",
+          "ne",
+          "lt",
+          "lte",
+          "gt",
+          "gte"
+        ]
+      }
+    ],
+    "selectable": "*",
+    "sortable": [
+      "title",
+      "issn",
+      "issn_print",
+      "alt_title",
+      "publisher",
+      "publisher_country",
+      "languages",
+      "subjects",
+      "lcc_codes",
+      "keywords",
+      "license",
+      "license_attributes",
+      "has_apc",
+      "apc_amount",
+      "oa_start_year",
+      "review_process",
+      "plagiarism_screening",
+      "weeks_to_publication",
+      "has_waiver",
+      "preservation",
+      "persistent_article_ids",
+      "doaj_oa_compliant",
+      "article_records",
+      "last_updated"
+    ],
+    "maxLimit": 1000,
+    "defaultLimit": 100
+  },
+  "pricing": {
+    "unit": "row",
+    "unitDefinition": "one row of doaj-journals",
+    "unitPrice": "0.0001",
+    "currency": "0x20c0000000000000000000000000000000000000"
+  },
+  "cache": {
+    "key": "queryHash",
+    "ttl": "1h"
+  },
+  "evals": {
+    "golden": [
+      {
+        "request": {
+          "limit": 1000
+        },
+        "expectRowCount": 1000
+      }
+    ],
+    "invariants": [],
+    "sampleSize": 20
+  },
+  "mpp": {
+    "intent": "session",
+    "recipient": "0x000000000000000000000000000000000000dEaD",
+    "currency": "0x20c0000000000000000000000000000000000000",
+    "feePayer": true
+  }
+}

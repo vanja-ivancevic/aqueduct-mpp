@@ -1,8 +1,9 @@
 # Aqueduct — Theory of the Codebase
 
 Aqueduct compiles any dataset into a **Tap**: a metered, agent-payable, MPP-session-served data feed.
-This file is the operating contract for all code here. Design docs live in `knowledge/` (start at
-`knowledge/00-index.md`; architecture = `08`, correctness = `10`, testnet = `09`).
+This file is the operating contract for all code here. The team's conclusions + rationale live in
+`knowledge/CONCLUSIONS.md`; the full research history (architecture, correctness, testnet, market
+precedent) is archived under `archive/knowledge/` (gitignored — local only).
 
 ## North star
 
@@ -49,12 +50,13 @@ These are laws, not preferences. A change that violates one is wrong even if it 
 ## Structure & boundaries
 
 ```
-core/        pure logic: config types, query planner, eval engine. NO vendor imports, NO I/O.
-adapters/    the seams: llm/ (claude-cli, codex-cli, openai, openrouter-mpp), compute/ (local, akash), source/ (parquet, csv, json — via DuckDB)
-onboard/     compile-time: profile file → config (LLM), validation loop
+core/        pure logic: config types, query planner, onboard, eval engine. NO vendor imports, NO I/O.
+             (onboard.ts/defaults.ts = compile-time profiling; evals.ts = the gate. Evals co-locate as *.test.ts.)
+adapters/    the seams: llm/ (claude-cli, codex-cli), compute/ (local, akash), source/ (duckdb), client/ (agent consumption)
 runtime/     the hot path: mppx tempo.session server; executes a config via DuckDB
-evals/       the suite + harness (shared by onboard, repair, continuous)
-cli/         npx aqueduct …  (onboard, serve, eval)
+cli/         aqueduct …  (onboard, serve, deploy, register)
+mcp/         the agent-facing MCP server (npx aqueduct-mcp), a thin transport over adapters/client
+skills/      the aqueduct agent skill (markdown + query.ts) over the same client
 ```
 
 - **`core/` is sacred**: pure, deterministic, dependency-light, no vendor/SDK imports, no I/O. If it
@@ -106,7 +108,7 @@ The code path from "paid request arrives" to "row returned" is the *only* place 
 
 - The eval suite (`evals/`) is **product code, not test code** — it gates onboarding, gates repairs,
   and produces the published correctness score. Treat it with production rigor.
-- `source-agreement`, `coverage`, `schema`, `invariants`, `freshness` per `knowledge/10`.
+- `source-agreement`, `coverage`, `schema`, `invariants`, `freshness` per `knowledge/CONCLUSIONS.md`.
 - Every Tap ships with evals or it doesn't ship. No silently-trusted feeds.
 - Our own dev tests follow the same spirit: prove the behavior on real data, including the failure
   case (corrupt the config → evals must fail and localize).

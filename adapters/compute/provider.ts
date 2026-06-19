@@ -35,12 +35,6 @@ export interface ComputeProvider {
   render(spec: DeploySpec): DeployArtifact;
 }
 
-/** Env the container needs at run time — names only; values are injected by the operator at deploy. */
-export const SERVER_ENV = {
-  required: ["AQUEDUCT_PRIVATE_KEY", "AQUEDUCT_RECIPIENT", "AQUEDUCT_SECRET"],
-  optional: ["AQUEDUCT_SPONSOR_KEY", "AQUEDUCT_RPC_URL", "AQUEDUCT_DATASET"],
-} as const;
-
 export const DEFAULT_SPEC: Omit<DeploySpec, "image"> = {
   port: 8402,
   dataset: "examples/exoplanets.csv",

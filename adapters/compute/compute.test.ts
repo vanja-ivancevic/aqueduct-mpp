@@ -6,13 +6,13 @@ import { DEFAULT_SPEC, type DeploySpec } from "./provider";
 const spec: DeploySpec = { ...DEFAULT_SPEC, image: "ghcr.io/acme/aqueduct:1.2.3", port: 9000 };
 
 describe("akashCompute.render", () => {
-  it("emits SDL with the image, exposed port, and SSE-ready ingress timeouts", () => {
+  it("emits SDL with the image, exposed port, and long-query ingress timeouts", () => {
     const a = akashCompute.render(spec);
     expect(a.filename).toBe("akash.deploy.yaml");
     expect(a.content).toContain("image: ghcr.io/acme/aqueduct:1.2.3");
     expect(a.content).toContain("port: 9000");
     expect(a.content).toContain("global: true");
-    // streaming-readiness: ingress must not cut long-lived connections at the 60s default
+    // long-query readiness: ingress must not cut long-lived connections at the 60s default
     expect(a.content).toContain("read_timeout: 3600000");
     expect(a.content).toContain('next_cases: ["off"]');
     // secrets are placeholders, never baked

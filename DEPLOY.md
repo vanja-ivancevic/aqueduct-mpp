@@ -69,14 +69,13 @@ aqueduct deploy --target akash --image ghcr.io/<you>/aqueduct:1.0.0
    ```
 4. **Get the URL**: `akash provider lease-status …` → the `global: true` host → `GET <host>/schema`.
 
-### Streaming readiness (SSE)
+### Long-running query connections
 
-MPP streaming mode (per-row SSE) is roadmap, not MVP — but the Akash manifest is already cut for it.
-Akash's HTTP ingress (NGINX) drops idle connections at a **60s default**, which would kill any
-long-lived stream. The rendered SDL raises `read_timeout`/`send_timeout` to 1h and sets
-`next_cases: ["off"]` so streams survive. (The server must still emit bytes — data rows or `:`
-keepalive comments — to keep the connection warm.) If a provider's ingress still stalls streams,
-expose a **non-80/443 port** in the SDL to get a raw NodePort and skip ingress entirely.
+Akash's HTTP ingress (NGINX) drops idle connections at a **60s default**, which would cut a slow
+cache-miss query whose upstream is still responding. The rendered SDL raises
+`read_timeout`/`send_timeout` to 1h and sets `next_cases: ["off"]` so a long query survives. If a
+provider's ingress still stalls connections, expose a **non-80/443 port** in the SDL to get a raw
+NodePort and skip ingress entirely.
 
 ## Why stateless
 

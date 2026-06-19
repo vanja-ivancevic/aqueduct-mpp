@@ -28,6 +28,9 @@ npx tsx skills/aqueduct/query.ts --discover "japanese cities"
 Returns `[{ id, name, url, description, price, currency }]` — Aqueduct Taps only. Pick a `url`, then
 run the flow below against it.
 
+> Prefer MCP? The same three ops (discover / schema / query) are also exposed as an MCP server —
+> `npx aqueduct-mcp` over stdio. See [docs/mcp.md](../../docs/mcp.md).
+
 ## The flow (always in this order)
 
 1. **Discover terms — free.** Read the schema to learn the columns, which fields are filterable, and
@@ -78,7 +81,6 @@ run the flow below against it.
 
 ## Not in scope (yet)
 
-Streaming/SSE for bulk pulls is **experimental** (a Tap served with `--stream` exposes a per-row
-`GET /query/stream`; see `docs/streaming.md`) — for the targeted reads this skill is for, a query
-returns its (limit-bounded) rows as one JSON body, which is the right shape. Live APIs and SQL/scraped
-sources are roadmap; Taps today are static parquet/CSV/JSON.
+For the targeted reads this skill is for, a query returns its (limit-bounded) rows as one JSON body,
+which is the right shape. Streaming/SSE for bulk pulls is experimental and undocumented. Live APIs and
+SQL/scraped sources are roadmap; Taps today are static parquet/CSV/JSON.
