@@ -20,6 +20,11 @@ Distilled from official docs (https://mpp.dev), the upstream repo, and the IETF 
 | [11-review-findings.md](11-review-findings.md) | Adversarial review (codex) — accepted fixes + build backlog |
 | [12-onboarding-harness.md](12-onboarding-harness.md) | What the onboarding LLM needs (no web/DB/Python/VPS) — declarative line |
 | [13-research-validation.md](13-research-validation.md) | 4-agent validation: DuckDB engine, mppx pipeline (SSE/Store), landscape, query-safety |
+| [14-live-proof.md](14-live-proof.md) | End-to-end live run evidence on Tempo testnet |
+| [15-adversarial-review.md](15-adversarial-review.md) | Adversarial review pass — findings + fixes |
+| [16-cost-benchmark.md](16-cost-benchmark.md) | Cost benchmark vs Claude Code from scratch (NYC taxi); honest takeaways |
+| [17-gallery-comparison.md](17-gallery-comparison.md) | 5-dataset measured comparison + the data-vendor / microtransaction framing |
+| [18-market-precedent.md](18-market-precedent.md) | **Why people pay for public data** — Alchemy/SerpAPI precedent, end users, x402 validation, the honest bet |
 
 ## Local references
 
