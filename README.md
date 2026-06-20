@@ -33,6 +33,10 @@ real research task to two identical `claude` agents and lets them work it:
   DOAJ open-access journal corpus (~23k journals), **paying per row over MPP from its own wallet**.
 - **On its own** — the same agent, no Aqueduct: told to acquire the data from DOAJ itself.
 
+> **The demo requires [Claude Code](https://docs.claude.com/en/docs/claude-code/overview)** — it spawns
+> real `claude` agents, so you need the `claude` CLI on your PATH (`npm install -g @anthropic-ai/claude-code`).
+> The Tap itself (onboard / serve / query) needs no LLM; only this comparison demo does.
+
 The task is a real researcher's question — *shortlist diamond-OA (no-APC) Medicine journals with fast,
 plagiarism-screened peer review, ranked by output* — which needs the whole corpus to answer faithfully.
 The catch: DOAJ put its bulk CSV **and** its API behind Cloudflare in 2025 because AI crawlers
@@ -59,8 +63,9 @@ then pay per row. The LLM is always the *client*; it never sits in the serving p
 ## Run it yourself (Tempo Moderato testnet)
 
 Everything runs on the public **Tempo Moderato testnet** — test tokens only, no real money (default RPC
-`https://rpc.moderato.tempo.xyz`, settlement in testnet pathUSD). Requires Node ≥ 20; the agent demo
-also needs the `claude` CLI on your PATH.
+`https://rpc.moderato.tempo.xyz`, settlement in testnet pathUSD). Requires Node ≥ 20. The agent demo
+additionally needs [Claude Code](https://docs.claude.com/en/docs/claude-code/overview) — the `claude`
+CLI on your PATH (`npm install -g @anthropic-ai/claude-code`); the rest of the pipeline needs no LLM.
 
 ```bash
 git clone https://github.com/vanja-ivancevic/aqueduct-mpp.git
