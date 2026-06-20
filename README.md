@@ -7,18 +7,11 @@
 > `aqueduct-mcp` commands in this README are the locally-built CLI; run them after the Install step
 > (or via `npm run aqueduct -- …`).
 
-**A maintained data dependency for your app — or your agent.** One command turns a Parquet, CSV, or
-JSON file into a *Tap*: a live, metered HTTP feed your app consumes in a few lines and **never
-maintains**. The
-publisher builds the pipeline *once* — fetch, normalize, keep-fresh, serve, meter — and everyone
+A data publisher uses _Aqueduct_ (open-source, MIT), to turn a data file (parquet, CSV, or JSON) into a _Tap_ in one command. _Tap_: a metered, agent-payable data feed. The publisher can set their own price and becomes economically incentivised to manage the open database. Agents discover it, query the database, and pay per row of the open database over MPP on Tempo. 
+
+The publisher builds the pipeline *once* — fetch, normalize, keep-fresh, serve, meter — and everyone
 downstream just queries it, paying per row over [MPP](https://mpp.dev) (the Machine Payments Protocol)
 on Tempo: peer-to-peer, settled on-chain, non-custodial (Aqueduct never touches the funds).
-
-Today every team rebuilds, hosts, and *babysits* its own ingestion for the same public data —
-duplicated across every app that needs it, breaking whenever the source moves. A Tap collapses that to
-**build-the-pipeline-once-for-everyone**: app builders embed a data feature without owning a pipeline,
-and agents consume the same feed the same way. DuckDB + MPP are the engine; the **maintained, uniform
-feed** is the product.
 
 ![Aqueduct system architecture — a dataset is compiled (DuckDB profiling → config assembly → eval gate) into a frozen ValidatedConfig that the runtime serves: agents discover and read the schema for free, then pay per row over an MPP session on Tempo, with parameterized DuckDB queries, a query-hash cache, and non-custodial settlement to the publisher's wallet.](./docs/architecture.png)
 
@@ -27,13 +20,13 @@ aqueduct onboard data.parquet --recipient 0xYourPayout       # → data.tap.json
 AQUEDUCT_PRIVATE_KEY=0x… aqueduct serve data.tap.json         # → live Tap on :8402
 ```
 
-No LLM runs when an agent queries. Onboarding profiles the file and writes a frozen, versioned **Tap
+Onboarding profiles the file and writes a frozen, versioned **Tap
 config**; the runtime that serves paid requests is pure, deterministic config execution. That's what
 keeps it cheap (sub-cent per row) and fast (cached reads < 100 ms).
 
 ## The demo — same agent, same task, with vs without Aqueduct
 
-Aqueduct doesn't answer questions; it gives an *agent* a clean data source. `npm run demo` gives one
+Aqueduct gives an *agent* a clean data source. The demo, `npm run demo`, gives one
 real research task to two identical `claude` agents and lets them work it:
 
 - **With Aqueduct** — the agent has the Aqueduct MCP tools and queries a live, metered Tap over the
