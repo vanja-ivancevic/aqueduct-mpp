@@ -53,11 +53,11 @@ overwhelmed it (traffic spiked **968%** over the prior year in a single day). So
 | agent cost | $0.28 | $2.59 |
 | data | one paid MPP query | blocked at the origin (403) |
 
-Walled off, the lone agent spent ~17 minutes and $2.59 probing every route into DOAJ — the bulk CSV,
-the API, OAI-PMH, the S3 cache, the Wayback Machine — hit a `403` at each, then stopped, refusing to
-fabricate a ranking it couldn't verify. The Aqueduct agent paid a fraction of a cent per row
-(0.0114 pathUSD) and answered correctly, while DOAJ's origin was never touched. Nothing is staged (each
-agent runs in an isolated dir so neither can read the repo's local copy); re-run it with `npm run demo`.
+The lone agent probed every route into DOAJ — bulk CSV, API, OAI-PMH, the S3 cache, the Wayback
+Machine — hit a `403` at each, then stopped, refusing to fabricate a ranking it couldn't verify. The
+Aqueduct agent paid a fraction of a cent per row (0.0114 pathUSD), answered correctly, and never
+touched DOAJ's origin. Nothing is staged: each agent runs in an isolated dir, so neither can read the
+repo's local copy. Re-run it with `npm run demo`.
 
 An agent reaches a Tap two ways: the **`aqueduct` skill** (`skills/aqueduct/`) or the **MCP server**
 (the `aqueduct-mcp` binary, see [docs/mcp.md](./docs/mcp.md)) — discover Taps, read a schema for free,
@@ -92,25 +92,22 @@ over MPP needs a wallet-holding client — the MCP server (`aqueduct-mcp`, see
 
 ## Why a Tap, not your own pipeline?
 
-The data is public — so why a Tap instead of fetching it yourself? Two reasons, one per side of the
-market.
+The data is public — so why not fetch it yourself? Two reasons, one per side of the market.
 
-**For the agent / app:** fetching public data once is easy; *owning* it forever is not — and
-increasingly you can't even fetch it. The open databases agents depend on are buckling under AI-crawler
-load and shutting their doors: Cloudflare walls, proof-of-work firewalls, rate limits, outages. A Tap
-is a maintained, metered side-door — one query, pay per row, always fresh, nothing to host or babysit.
+**For the agent / app:** fetching public data once is easy; *owning* it forever isn't — and
+increasingly you can't even fetch it. The databases agents depend on are buckling under AI-crawler load
+and shutting their doors: Cloudflare walls, proof-of-work firewalls, rate limits, outages. A Tap is a
+maintained, metered side-door: one query, pay per row, always fresh, nothing to host or babysit.
 
-**For the data publisher:** that crawler load is a cost with no revenue. A Tap turns it into a metered,
-agent-payable API in one command — the publisher builds the pipeline *once*, the origin is offloaded,
-and every paying agent funds the upkeep. The publisher is the reseller: they set the per-row price at
-onboard (`--unit-price`) and keep the margin above their hosting cost — the data is free to them, the
-*access* is the product. Settlement is agent→publisher on Tempo; Aqueduct is non-custodial and never
-touches the funds. (Note the two costs are separate: the agent's own model/compute spend is its own; the
-data payment is the publisher's per-row price.) Alchemy for the open-data long tail.
+**For the publisher:** that crawler load is a cost with no revenue. A Tap turns it into a metered,
+agent-payable API in one command — build the pipeline *once*, offload the origin, let every paying
+agent fund the upkeep. The publisher sets the per-row price at onboard (`--unit-price`) and keeps the
+margin over hosting: the data is free to them, the *access* is the product. Settlement is
+agent→publisher on Tempo, non-custodial.
 
-(Honest scope: for a *static* file you fetch once and never refresh, DIY is fine — a Tap earns its keep
-on data that's **fresh, walled, normalized, or consumed by many**, where the maintenance and access
-never end.)
+(Scope: for a *static* file you fetch once and never refresh, DIY is fine. A Tap earns its keep on data
+that's **fresh, walled, normalized, or consumed by many** — where the maintenance never ends. The
+agent's model/compute spend and the publisher's per-row data price are separate costs.)
 
 The demo Tap, `examples/doaj-journals.tap.json`, is a 22,940-journal slice of DOAJ compiled with
 `aqueduct onboard`. The container deploy path below bakes that same dataset (`examples/doaj-journals.csv`)
