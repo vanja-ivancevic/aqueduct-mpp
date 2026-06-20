@@ -71,13 +71,16 @@ price. No wallet. Always read this before buying: an undeclared field/op is a fr
 
 Args: `{ tapUrl, select?, filters?, sort?, limit?, offset? }` — the constrained query shape from
 [query.md](./query.md). **This is the only tool that spends money:** it opens an MPP session and pays
-`returned rows × unitPrice` on Tempo, settled on close, using `AQUEDUCT_AGENT_KEY`. A query matching 0
-rows is free; keep `limit` tight. Returns `{ count, amount, cached, settlement, rows }`.
+`returned rows × unitPrice` on Tempo, settled on close, using `AQUEDUCT_AGENT_KEY`. Returns
+`{ count, amount, cached, settlement, rows }`, where `settlement` is the MPP session receipt reference
+(how to confirm the payment: [pricing.md → Verifying payment](./pricing.md#verifying-payment)). A query
+matching **0 rows is free** (`count: 0`, `amount: "0"`, no charge) — so build filters from values you
+actually saw in `aqueduct_schema`, and keep `limit` tight.
 
 ```json
 { "tapUrl": "https://your-tap-host",
-  "select": ["name", "population"],
-  "filters": [{ "field": "country", "op": "eq", "value": "JP" }],
-  "sort": [{ "field": "population", "dir": "desc" }],
+  "select": ["title", "publisher_country", "weeks_to_publication"],
+  "filters": [{ "field": "has_apc", "op": "eq", "value": false }],
+  "sort": [{ "field": "article_records", "dir": "desc" }],
   "limit": 5 }
 ```

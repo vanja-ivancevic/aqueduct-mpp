@@ -52,6 +52,29 @@ The `mpp.intent` is `session` — an off-chain payment channel (TIP-1034):
 This is what makes sub-cent per-row billing economical: thousands of `0.0001` charges cost a single
 transaction fee at close, not one per request.
 
+### Verifying payment
+
+The client (`buyRows`, the MCP `aqueduct_query` tool, the skill CLI) returns a `settlement` field — the
+MPP **receipt reference** for the session (`method: "tempo"`, a `0x…` reference from the channel close).
+It identifies the settlement within MPP; it is **not** guaranteed to be a plain EOA transaction
+resolvable via `eth_getTransactionByHash` on the public RPC (Tempo settles channels through a precompile,
+so the reference may not surface as a normal transaction).
+
+The ground-truth proof that money moved is the **agent wallet's pathUSD balance delta**: it drops by the
+data charge (`rows × unitPrice`) plus the on-chain gas the agent paid to open and settle the channel.
+
+```ts
+import { createClient, http } from "viem";
+import { tempoModerato } from "viem/chains";
+import { Actions } from "viem/tempo";
+import { DEFAULT_RPC_URL, PATH_USD } from "./core/constants";
+
+const client = createClient({ chain: tempoModerato, transport: http(DEFAULT_RPC_URL) });
+const bal = () => Actions.token.getBalance(client, { account: agentAddress, token: PATH_USD });
+// before = await bal();  … run the paid query …  after = await bal();
+// (before - after) = data charge + channel gas, both paid non-custodially from the agent's wallet.
+```
+
 ### Gas sponsorship (optional)
 
 `mpp.feePayer: true` lets the operator sponsor agents' on-chain channel gas — but only when `serve`

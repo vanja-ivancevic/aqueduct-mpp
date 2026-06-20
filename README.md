@@ -186,7 +186,7 @@ import { tempo } from "mppx/client";
 import { privateKeyToAccount } from "viem/accounts";
 
 const session = tempo.session.manager({ account, getClient, maxDeposit: "1" });
-const q = Buffer.from(JSON.stringify({ filters: [{ field: "country", op: "eq", value: "JP" }], limit: 50 }))
+const q = Buffer.from(JSON.stringify({ filters: [{ field: "has_apc", op: "eq", value: false }], limit: 50 }))
   .toString("base64url");
 
 const res = await session.fetch(`${tap}/query?q=${q}`);  // 402 → session voucher → 200

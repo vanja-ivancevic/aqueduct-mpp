@@ -62,7 +62,7 @@ async function main(): Promise<void> {
   console.log(
     JSON.stringify({
       count: result.count,
-      paid: `${result.amount} pathUSD`,
+      amount: `${result.amount} pathUSD`,
       cached: result.cached,
       settlement: result.settlement,
       rows: result.rows,

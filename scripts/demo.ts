@@ -20,6 +20,7 @@
  */
 import { type ChildProcess, spawn } from "node:child_process";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { basename, extname, join, resolve } from "node:path";
 import { createInterface } from "node:readline";
@@ -326,26 +327,44 @@ async function balanceStable(address: `0x${string}`): Promise<bigint> {
   return prev;
 }
 
+/** pathUSD has 6 decimals — render raw token units as a human amount. */
+const fmtUSD = (units: bigint) => `${(Number(units) / 1e6).toFixed(4)} pathUSD`;
+
 async function fund(address: `0x${string}`, label: string): Promise<boolean> {
+  const done = (tag: string, bal: bigint) =>
+    console.log(`  ${green("✓")} ${label} ${dim(address)}  ${bold(fmtUSD(bal))} ${dim(tag)}`);
   try {
-    if ((await balance(address)) > 0n) {
-      console.log(`  ${green("✓")} ${label} ${dim("(funded)")}`);
+    const existing = await balance(address);
+    if (existing > 0n) {
+      done("(already funded)", existing);
       return true;
     }
+    console.log(`  ${dim("·")} ${label} ${dim(address)}  ${dim("requesting from Tempo faucet…")}`);
     await Actions.faucet.fund(getClient(), { account: address });
     const deadline = Date.now() + 30_000;
     while (Date.now() < deadline) {
       await new Promise((r) => setTimeout(r, 1500));
-      if ((await balance(address)) > 0n) {
-        console.log(`  ${green("✓")} ${label} ${dim("(faucet-funded)")}`);
+      const bal = await balance(address);
+      if (bal > 0n) {
+        done("(faucet-funded)", bal);
         return true;
       }
     }
   } catch {
     /* faucet unavailable */
   }
-  console.log(`  ${yellow("·")} ${label}: faucet unavailable`);
+  console.log(`  ${yellow("·")} ${label} ${dim(address)}: faucet unavailable`);
   return false;
+}
+
+/** True if nothing is already listening on `port` (so we can fail with a clear message, not EADDRINUSE). */
+function portFree(port: number): Promise<boolean> {
+  return new Promise((res) => {
+    const probe = createServer();
+    probe.once("error", () => res(false));
+    probe.once("listening", () => probe.close(() => res(true)));
+    probe.listen(port); // default host — matches how the Tap server binds, so we catch a real conflict
+  });
 }
 
 /** Pull the agent's headline answer ("Top journal: X") if it produced one, else flag no data. */
@@ -390,8 +409,10 @@ async function main(): Promise<void> {
   const unitPrice = await ask("price per row (pathUSD):", "0.0001");
   const name = basename(csvPath, extname(csvPath)) || "tap";
   console.log(
-    `  ${dim("$")} aqueduct onboard ${csvPath} --unit-price ${unitPrice} --recipient ${server.address.slice(0, 10)}…`,
+    `  ${dim("$")} aqueduct onboard ${csvPath} --unit-price ${unitPrice} --recipient ${server.address}`,
   );
+  console.log(`  ${dim("▸ payout wallet (publisher) —")} ${bold(server.address)}`);
+  console.log(`  ${dim("▸ profiling the file with DuckDB — deterministic, no model…")}`);
   const engine = await DuckDbEngine.create();
   const onb = await deriveConfig(
     {
@@ -432,15 +453,28 @@ async function main(): Promise<void> {
     `  ${green("✓")} Tap '${bold(config.name)}' validated — ${bold(rows.toLocaleString())} rows frozen into a versioned config ${dim("(the single source of truth)")}`,
   );
 
-  // ── 2. SERVE — Tap goes live, fund the agent's wallet ─────────────────────────────────────────────
-  rule("SERVE — Tap live on :8402 + fund the agent's wallet");
+  // ── 2. SERVE — Tap goes live, fund the wallets ────────────────────────────────────────────────────
+  rule("SERVE — Tap live on :8402 + fund the wallets");
+  if (!(await portFree(PORT))) {
+    console.error(
+      `  ${yellow("✗")} port ${PORT} is already in use. Stop whatever is listening there (a previous ` +
+        `'aqueduct serve' or demo) and re-run.  ${dim(`lsof -ti :${PORT} | xargs kill`)}`,
+    );
+    process.exit(1);
+  }
   const tap = serve({
     fetch: createTapServer(config, engine, { account: server, rpcUrl: RPC }).fetch,
     port: PORT,
   });
+  console.log(
+    `  ${green("✓")} Tap '${bold(config.name)}' live on ${bold(TAP_URL)}  ${dim("— /schema free · /query paid per row over MPP")}`,
+  );
+  console.log(
+    `  ${dim("funding wallets from the public Tempo Moderato faucet (testnet tokens, no real money)…")}`,
+  );
   await Promise.all([
-    fund(server.address, "publisher wallet"),
-    fund(agent.address, "agent wallet   "),
+    fund(server.address, "publisher wallet (receives settlement)"),
+    fund(agent.address, "agent wallet    (pays per row)        "),
   ]);
 
   const mcpConfig = join(tmpdir(), `aqueduct-mcp-${PORT}.json`);
