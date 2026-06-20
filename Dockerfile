@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# Aqueduct Tap server — one image, runs identically locally (docker compose) and on Akash.
+# Aqueduct Tap server — one portable image, run locally via docker compose.
 # The container is stateless: it onboards a baked dataset deterministically at boot, then serves it.
 
 FROM node:20-slim AS build

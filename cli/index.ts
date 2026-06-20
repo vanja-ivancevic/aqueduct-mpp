@@ -13,7 +13,6 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { basename, extname, resolve } from "node:path";
 import { serve } from "@hono/node-server";
 import { privateKeyToAccount } from "viem/accounts";
-import { akashCompute } from "../adapters/compute/akash";
 import { localCompute } from "../adapters/compute/local";
 import { DEFAULT_SPEC, type DeploySpec } from "../adapters/compute/provider";
 import { devLlm } from "../adapters/llm/cli";
@@ -201,13 +200,12 @@ async function cmdServe(args: string[]): Promise<number> {
 // ── deploy: render a deployment manifest for a compute target ─────────────────
 async function cmdDeploy(args: string[]): Promise<number> {
   const flags = parseFlags(args);
-  const target = flags.get("target");
-  const provider =
-    target === "akash" ? akashCompute : target === "local" ? localCompute : undefined;
+  const target = flags.get("target") ?? "local";
+  const provider = target === "local" ? localCompute : undefined;
   const image = flags.get("image");
   if (!provider || !image) {
     console.error(
-      "usage: aqueduct deploy --target local|akash --image <ref> [--port 8402] [--dataset examples/doaj-journals.csv] [--out file]",
+      "usage: aqueduct deploy --target local --image <ref> [--port 8402] [--dataset examples/doaj-journals.csv] [--out file]",
     );
     return 1;
   }
@@ -311,7 +309,7 @@ function printHelp() {
 commands:
   onboard <file>      profile a parquet/csv/json file → eval-passed Tap config
   serve   <config>    run the Tap: free /schema, paid /query over MPP sessions
-  deploy              render a deployment manifest (local docker-compose or Akash SDL)
+  deploy              render a deployment manifest (local docker-compose)
   register <config>   render the MPP registry entry to publish a deployed Tap (--url)
 
 onboard flags:

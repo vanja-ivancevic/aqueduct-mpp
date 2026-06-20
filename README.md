@@ -165,21 +165,19 @@ Endpoints:
 The agent request rides in `q` as base64url-encoded JSON: `{ select?, filters?, sort?, limit?, offset? }`,
 constrained to exactly the fields/operators the config declares. Agents never send SQL.
 
-### Ship it (local ↔ Akash)
+### Ship it (local container)
 
-A Tap runs as **one stateless container** — same image on your laptop and on [Akash](https://akash.network).
-It onboards the baked dataset deterministically at boot (no LLM), gates it, then serves. `aqueduct deploy`
-renders the orchestrator manifest:
+A Tap runs as **one stateless container**: it onboards the baked dataset deterministically at boot (no
+LLM), gates it, then serves. `aqueduct deploy` renders the docker-compose manifest:
 
 ```bash
 docker build -t ghcr.io/you/aqueduct:1.0.0 .
-
 aqueduct deploy --target local --image ghcr.io/you/aqueduct:1.0.0   # → docker-compose.yml
-aqueduct deploy --target akash --image ghcr.io/you/aqueduct:1.0.0   # → akash.deploy.yaml (long-query ingress)
 ```
 
-Secrets are never baked — local interpolates them from your env, Akash takes them as manifest values you
-fill in. Full guide: **[DEPLOY.md](./DEPLOY.md)**.
+Secrets are never baked — compose interpolates them from your env. Full guide: **[DEPLOY.md](./DEPLOY.md)**.
+The image is self-contained, so permissionless hosting (e.g. [Akash](https://akash.network)) is a
+natural next target — *not yet tested*.
 
 ## Consume a Tap (the agent)
 
@@ -225,7 +223,7 @@ and the `DuckDbEngine` adapter.
   perimeter — declared filters/columns → an abstract plan, never raw SQL), the eval engine, BigInt
   pricing.
 - **`adapters/`** — the external seams: `source/duckdb` (reads parquet/CSV/JSON), `llm/cli`
-  (claude/codex for the optional refine pass), `compute/{local,akash}` (renders the deploy manifest).
+  (claude/codex for the optional refine pass), `compute/local` (renders the deploy manifest).
 - **`runtime/`** — the hot path: a Hono server that executes a config behind an MPP session charge,
   plus a TTL result cache.
 
@@ -236,8 +234,9 @@ compile step; the runtime that answers a paid request is pure, deterministic con
 
 Working end-to-end on the Tempo Moderato testnet: onboard → serve → agent makes **multiple** paid
 requests on one session channel (cumulative vouchers, cache hit on repeats) → `200` + rows + receipt →
-a single on-chain settle at close. Ships as a stateless container that runs the same locally and on
-Akash ([DEPLOY.md](./DEPLOY.md)). Today's scope is **static structured files** (parquet / CSV / JSON).
+a single on-chain settle at close. Ships as a stateless container run locally via docker-compose
+([DEPLOY.md](./DEPLOY.md)); permissionless hosting (e.g. Akash) is a future goal, not yet tested.
+Today's scope is **static structured files** (parquet / CSV / JSON).
 Known limits: a single in-process session store (multi-instance deploys need a shared store, on the
 roadmap), and volatile/live sources are roadmap. Fully-sponsored agent gas needs a separate sponsor
 wallet (`AQUEDUCT_SPONSOR_KEY`); without one, agents self-pay gas.
@@ -253,7 +252,7 @@ Reference docs live in [`docs/`](./docs/README.md):
 - [Discovery & consumption](./docs/discovery.md) — find/buy Taps via MPP's registry, the skill, the MCP server
 - [MCP server](./docs/mcp.md) — expose discover/schema/query to any MCP agent over stdio (`aqueduct-mcp`)
 - [How it works](./docs/how-it-works.html) — a plain-language visual walkthrough of the two processes (open in a browser)
-- [Deploy](./DEPLOY.md) — ship a Tap local ↔ Akash
+- [Deploy](./DEPLOY.md) — ship a Tap as a local container (permissionless hosting is a future goal)
 
 ## Links
 

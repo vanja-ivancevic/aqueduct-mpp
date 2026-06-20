@@ -14,7 +14,7 @@ reference behind it.
 | [pricing.md](./pricing.md) | How a request is priced and billed over an MPP session |
 | [discovery.md](./discovery.md) | Finding & consuming Taps — `register`, the skill, the MCP server (no directory of our own) |
 | [mcp.md](./mcp.md) | The MCP server — discover/schema/query tools for any MCP agent over stdio |
-| [../DEPLOY.md](../DEPLOY.md) | Ship a Tap as a container — local docker-compose ↔ Akash |
+| [../DEPLOY.md](../DEPLOY.md) | Ship a Tap as a local container (docker-compose); permissionless hosting is a future goal |
 
 ## The model in one paragraph
 

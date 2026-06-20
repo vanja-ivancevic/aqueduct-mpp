@@ -51,7 +51,6 @@ export {
 export { DuckDbEngine } from "./adapters/source/duckdb";
 export { claudeCli, codexCli, devLlm } from "./adapters/llm/cli";
 export { localCompute } from "./adapters/compute/local";
-export { akashCompute } from "./adapters/compute/akash";
 export {
   type ComputeProvider,
   type DeploySpec,

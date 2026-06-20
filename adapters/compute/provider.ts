@@ -1,10 +1,11 @@
 /**
  * ComputeProvider — the seam between the Tap server and WHERE it runs.
  *
- * The server is one container image; a provider renders the deployment manifest for a target so
- * local↔production is a one-flag switch (a core invariant). Providers are pure renderers: they
- * turn a `DeploySpec` into a manifest string + operator notes — they never hold secrets or broadcast
- * anything. Actual `docker compose up` / `akash` CLI steps are the operator's, listed in `notes`.
+ * The server is one container image; a provider renders the deployment manifest for a target. Today
+ * the only target is `local` (docker-compose); permissionless hosting (e.g. Akash) is a future goal,
+ * not yet tested. Providers are pure renderers: they turn a `DeploySpec` into a manifest string +
+ * operator notes — they never hold secrets or broadcast anything. Actual `docker compose up` steps are
+ * the operator's, listed in `notes`.
  */
 
 export type DeploySpec = {
@@ -17,8 +18,6 @@ export type DeploySpec = {
   cpu: number;
   memory: string;
   storage: string;
-  /** Akash bid price ceiling, in uAKT (ignored by other targets). */
-  akashPriceUakt: number;
 };
 
 export type DeployArtifact = {
@@ -31,7 +30,7 @@ export type DeployArtifact = {
 };
 
 export interface ComputeProvider {
-  readonly target: "local" | "akash";
+  readonly target: "local";
   render(spec: DeploySpec): DeployArtifact;
 }
 
@@ -41,5 +40,4 @@ export const DEFAULT_SPEC: Omit<DeploySpec, "image"> = {
   cpu: 0.5,
   memory: "512Mi",
   storage: "1Gi",
-  akashPriceUakt: 10000,
 };

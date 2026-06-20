@@ -1,6 +1,6 @@
 #!/bin/sh
 # Container boot: deterministically onboard the baked dataset (no LLM), then serve the Tap.
-# Identical behavior locally and on Akash — the only inputs are env vars.
+# The only inputs are env vars, so the image is portable across hosts.
 set -e
 
 : "${AQUEDUCT_DATASET:=examples/doaj-journals.csv}"
